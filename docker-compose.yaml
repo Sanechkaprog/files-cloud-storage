@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:16
+    container_name: database
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - "volume-db:/var/lib/postgresql/data"
+    networks:
+      - my-net
+    ports:
+      - "5555:5432"
+
+volumes:
+  volume-db:
+    name: volume-db
+
+
+networks:
+  my-net:
+    name: my-net
+  
