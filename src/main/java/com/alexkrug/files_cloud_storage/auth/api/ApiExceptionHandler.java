@@ -3,11 +3,14 @@ package com.alexkrug.files_cloud_storage.auth.api;
 import com.alexkrug.files_cloud_storage.auth.api.dto.ErrorResponse;
 import com.alexkrug.files_cloud_storage.auth.exceptions.InvalidCredentialsException;
 import com.alexkrug.files_cloud_storage.auth.exceptions.NicknameIsTakenException;
+import com.alexkrug.files_cloud_storage.auth.exceptions.SignOutWithoutAuthException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+
 import java.util.List;
 
 @RestControllerAdvice
@@ -34,8 +37,8 @@ public class ApiExceptionHandler {
         );
     }
 
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ErrorResponse> invalidCredentials(InvalidCredentialsException ex) {
+    @ExceptionHandler({InvalidCredentialsException.class, SignOutWithoutAuthException.class})
+    public ResponseEntity<ErrorResponse> invalidCredentials(Exception ex) {
         return new ResponseEntity<>(
                 new ErrorResponse(ex.getMessage()),
                 HttpStatus.UNAUTHORIZED
@@ -49,4 +52,5 @@ public class ApiExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
+
 }

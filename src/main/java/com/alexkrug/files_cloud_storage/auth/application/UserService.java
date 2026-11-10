@@ -1,7 +1,5 @@
 package com.alexkrug.files_cloud_storage.auth.application;
 
-
-
 import com.alexkrug.files_cloud_storage.auth.domain.User;
 import com.alexkrug.files_cloud_storage.auth.exceptions.InvalidCredentialsException;
 import com.alexkrug.files_cloud_storage.auth.exceptions.NicknameIsTakenException;
@@ -16,6 +14,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 
 @Service
 @Transactional
@@ -56,13 +55,7 @@ public class UserService  {
         }
     }
 
-
-    public UserRepository getUserRepository() {
-        return userRepository;
+    public User getUser(String username) {
+        return userRepository.getUserByUsername(username);
     }
-
-    public PasswordEncoder getPasswordEncoder() {
-        return passwordEncoder;
-    }
-
 }

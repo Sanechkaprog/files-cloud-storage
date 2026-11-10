@@ -4,21 +4,25 @@ package com.alexkrug.files_cloud_storage.auth.api;
 import com.alexkrug.files_cloud_storage.auth.api.dto.MainResponse;
 import com.alexkrug.files_cloud_storage.auth.api.dto.SignUpRequest;
 import com.alexkrug.files_cloud_storage.auth.application.UserService;
+import com.alexkrug.files_cloud_storage.auth.domain.User;
+import com.alexkrug.files_cloud_storage.auth.exceptions.SignOutWithoutAuthException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.HandlerMapping;
 
 @RequestMapping("/api/auth")
 @RestController
 public class AuthController {
     private final UserService userService;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, @Nullable HandlerMapping resourceHandlerMapping) {
         this.userService = userService;
     }
 
@@ -35,14 +39,33 @@ public class AuthController {
     }
 
     @PostMapping("sign-in")
-    public ResponseEntity<MainResponse> signIn(@Valid @RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<MainResponse> signIn(@Valid @RequestBody SignUpRequest signUpRequest, HttpSession session) {
         String username = signUpRequest.username();
         String password = signUpRequest.password();
 
         Authentication authentication = userService.signIn(username, password);
+
+        String usernameAuth = authentication.getName();
+        User user = userService.getUser(username);
+        session.setAttribute("userId", user.getUserId());
+
         MainResponse mainResponse = new MainResponse(authentication.getName());
 
         return new ResponseEntity<>(mainResponse, HttpStatus.OK);
     }
-}
 
+    @PostMapping("sign-out")
+    public ResponseEntity<HttpStatus> signOut(HttpSession session, HttpServletResponse httpServletResponse) {
+        if (session == null || session.getAttribute("userId") == null) {
+            throw new SignOutWithoutAuthException("User not authorized");
+        }
+        session.invalidate();
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        httpServletResponse.addCookie(cookie);
+
+        return ResponseEntity.ok().build();
+
+    }
+}
