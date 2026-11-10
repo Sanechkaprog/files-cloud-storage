@@ -5,7 +5,6 @@ import com.alexkrug.files_cloud_storage.auth.api.dto.MainResponse;
 import com.alexkrug.files_cloud_storage.auth.api.dto.SignUpRequest;
 import com.alexkrug.files_cloud_storage.auth.application.UserService;
 import com.alexkrug.files_cloud_storage.auth.domain.User;
-import com.alexkrug.files_cloud_storage.auth.exceptions.AuthException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -13,6 +12,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -45,9 +46,10 @@ public class AuthController {
         Authentication authentication = userService.signIn(username, password);
 
         String usernameAuth = authentication.getName();
-        User user = userService.getUserByUsername(username);
+        User user = userService.getUserByUsername(usernameAuth);
         session.setAttribute("userId", user.getUserId());
-
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                SecurityContextHolder.getContext());
         MainResponse mainResponse = new MainResponse(authentication.getName());
 
         return new ResponseEntity<>(mainResponse, HttpStatus.OK);
@@ -55,15 +57,11 @@ public class AuthController {
 
     @PostMapping("sign-out")
     public ResponseEntity<HttpStatus> signOut(HttpSession session, HttpServletResponse httpServletResponse) {
-        if (session == null || session.getAttribute("userId") == null) {
-            throw new AuthException("User not authorized");
-        }
         session.invalidate();
         Cookie cookie = new Cookie("JSESSIONID", null);
         cookie.setPath("/");
         cookie.setMaxAge(0);
         httpServletResponse.addCookie(cookie);
-
         return ResponseEntity.ok().build();
 
     }

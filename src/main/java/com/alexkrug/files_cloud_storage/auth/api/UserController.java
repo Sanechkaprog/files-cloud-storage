@@ -4,7 +4,6 @@ import com.alexkrug.files_cloud_storage.auth.api.dto.MainResponse;
 import com.alexkrug.files_cloud_storage.auth.application.UserService;
 import com.alexkrug.files_cloud_storage.auth.domain.User;
 import com.alexkrug.files_cloud_storage.auth.exceptions.AuthException;
-import com.sun.tools.javac.Main;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
