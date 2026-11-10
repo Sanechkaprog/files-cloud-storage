@@ -14,4 +14,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     User getUserByUsername(String username);
 
+    User getUserByUserId(UUID userId);
+
 }

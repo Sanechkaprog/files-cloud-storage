@@ -15,6 +15,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 
 @Service
 @Transactional
@@ -55,7 +57,11 @@ public class UserService  {
         }
     }
 
-    public User getUser(String username) {
+    public User getUserByUsername(String username) {
         return userRepository.getUserByUsername(username);
+    }
+
+    public User getUserById(UUID uuid) {
+        return userRepository.getUserByUserId(uuid);
     }
 }

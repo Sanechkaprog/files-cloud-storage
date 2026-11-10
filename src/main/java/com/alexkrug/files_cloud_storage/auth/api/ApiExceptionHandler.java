@@ -3,7 +3,7 @@ package com.alexkrug.files_cloud_storage.auth.api;
 import com.alexkrug.files_cloud_storage.auth.api.dto.ErrorResponse;
 import com.alexkrug.files_cloud_storage.auth.exceptions.InvalidCredentialsException;
 import com.alexkrug.files_cloud_storage.auth.exceptions.NicknameIsTakenException;
-import com.alexkrug.files_cloud_storage.auth.exceptions.SignOutWithoutAuthException;
+import com.alexkrug.files_cloud_storage.auth.exceptions.AuthException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -37,7 +37,7 @@ public class ApiExceptionHandler {
         );
     }
 
-    @ExceptionHandler({InvalidCredentialsException.class, SignOutWithoutAuthException.class})
+    @ExceptionHandler({InvalidCredentialsException.class, AuthException.class})
     public ResponseEntity<ErrorResponse> invalidCredentials(Exception ex) {
         return new ResponseEntity<>(
                 new ErrorResponse(ex.getMessage()),
