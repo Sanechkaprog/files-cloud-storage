@@ -13,12 +13,35 @@ services:
     ports:
       - "5555:5432"
 
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: minio
+    restart: unless-stopped
+
+    command:
+      - server
+      - /data
+      - --console-address
+      - ":9001"
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USERNAME}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+    volumes:
+      - "minio-volume:/data"
+
+    networks:
+      - my-net
+
 volumes:
   volume-db:
-    name: volume-db
-
+  minio-volume:
 
 networks:
   my-net:
     name: my-net
-  
