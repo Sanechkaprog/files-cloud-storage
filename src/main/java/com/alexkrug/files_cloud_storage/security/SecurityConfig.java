@@ -36,8 +36,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(x ->
-                        x.requestMatchers("/api/auth/sign-in", "/api/auth/sign-up")
+                .authorizeHttpRequests(request ->
+                        request.requestMatchers("/api/auth/sign-in", "/api/auth/sign-up")
                                 .permitAll()
                                 .anyRequest().authenticated())
                 .sessionManagement(session ->
