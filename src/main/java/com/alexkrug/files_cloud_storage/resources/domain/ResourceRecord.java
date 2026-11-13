@@ -3,6 +3,8 @@ package com.alexkrug.files_cloud_storage.resources.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
@@ -15,18 +17,28 @@ public class ResourceRecord {
     private UUID resourceId;
 
     @NotNull
-    @Max(1000)
+    @Size(max = 1000)
     private String path;
 
     @NotNull
-    @Max(255)
+    @Size(max = 255)
     private String name;
 
+    @Null
     private Long size;
 
     @NotNull
     @Enumerated(EnumType.STRING)
     private ResourceType type;
+
+    public ResourceRecord(){}
+
+    public ResourceRecord(String path, String name, Long size, ResourceType type) {
+        this.path = path;
+        this.name = name;
+        this.size = size;
+        this.type = type;
+    }
 
     public UUID getResourceId() {
         return resourceId;
