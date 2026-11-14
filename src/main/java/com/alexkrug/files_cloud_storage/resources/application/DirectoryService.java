@@ -8,7 +8,7 @@ import com.alexkrug.files_cloud_storage.resources.domain.ResourceType;
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderIsAlreadyExistException;
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderNotExistsException;
 import com.alexkrug.files_cloud_storage.resources.infrastucture.ResourceRepository;
-import io.minio.MinioClient;
+import com.alexkrug.files_cloud_storage.storage.repository.ObjectStorage;
 import io.minio.PutObjectArgs;
 import io.minio.StatObjectArgs;
 import org.springframework.stereotype.Service;
@@ -21,12 +21,12 @@ import java.util.Optional;
 
 @Service
 public class DirectoryService {
-    private final MinioClient minioClient;
+    private final ObjectStorage objectStorage;
     private final ResourceRepository resourceRepository;
 
-    public DirectoryService(MinioClient minioClient, ResourceRepository resourceRepository) {
+    public DirectoryService(ObjectStorage objectStorage, ResourceRepository resourceRepository) {
         this.resourceRepository = resourceRepository;
-        this.minioClient = minioClient;
+        this.objectStorage = objectStorage;
     }
 
     public DirectoryDto addDirectory(String path) {
@@ -35,13 +35,7 @@ public class DirectoryService {
             throw new FolderIsAlreadyExistException("Folder is already exist");
         }
         try {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket("cloud-storage")
-                            .object(path + "/")
-                            .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
-                            .build()
-            );
+            objectStorage.createDirectory(path + "/");
             int lastIndex = path.lastIndexOf('/');
             int firstIndex = path.indexOf('/');
 
@@ -117,12 +111,8 @@ public class DirectoryService {
         if (parentPath.isEmpty()) {
             parentPath = "/";
         }
-        StatObjectArgs statObjectArgs = StatObjectArgs.builder()
-                .bucket("cloud-storage")
-                .object(parentPath)
-                .build();
         try {
-            minioClient.statObject(statObjectArgs);
+            objectStorage.getStatObject(parentPath);
         } catch (Exception ex) {
             throw new FolderNotExistsException("Parent-folder doesn`t exist");
         }
