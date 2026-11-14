@@ -1,0 +1,1 @@
+CREATE TYPE ResourceType AS ENUM ('DIRECTORY', 'FILE')

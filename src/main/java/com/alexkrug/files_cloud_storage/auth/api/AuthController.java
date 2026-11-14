@@ -17,16 +17,15 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.web.bind.annotation.*;
 
 
-@RequestMapping("/api/auth")
+@RequestMapping(value = "/api/auth")
 @RestController
 public class AuthController {
     private final UserService userService;
-
     public AuthController(UserService userService) {
         this.userService = userService;
     }
 
-    @PostMapping("sign-up")
+    @PostMapping(value = "sign-up")
     public ResponseEntity<MainResponse> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         String username = signUpRequest.username();
         String password = signUpRequest.password();
@@ -62,6 +61,7 @@ public class AuthController {
         cookie.setPath("/");
         cookie.setMaxAge(0);
         httpServletResponse.addCookie(cookie);
+        SecurityContextHolder.clearContext();
         return ResponseEntity.ok().build();
 
     }
