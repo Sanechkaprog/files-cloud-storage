@@ -6,5 +6,4 @@ public record DirectoryDto (
         String path,
         String name,
         ResourceType type
-) {
-}
+) implements ResourceDto {}
