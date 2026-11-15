@@ -24,7 +24,6 @@ public class ResourceRecord {
     @Size(max = 255)
     private String name;
 
-    @Null
     private Long size;
 
     @NotNull

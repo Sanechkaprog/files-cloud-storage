@@ -10,6 +10,7 @@ import io.minio.StatObjectResponse;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 @Service
 public class ObjectStorageService implements ObjectStorage {
@@ -47,4 +48,20 @@ public class ObjectStorageService implements ObjectStorage {
             throw new StatsObjectUnavailbaleGetException("Unavailable getting stats");
         }
     }
+
+    @Override
+    public void createFile(String path, InputStream is, Long size) {
+        try {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(BUCKET_NAME)
+                            .object(path)
+                            .stream(is, size, -1)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new MinioClientException("Error with MinioClient");
+        }
+    }
+
 }
