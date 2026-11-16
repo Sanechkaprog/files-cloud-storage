@@ -37,4 +37,12 @@ public class ResourcesApiExceptionHandler {
                 HttpStatus.NOT_FOUND
         );
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> invalidPath(IllegalStateException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse(ex.getMessage()),
+                HttpStatus.BAD_REQUEST
+        );
+    }
 }

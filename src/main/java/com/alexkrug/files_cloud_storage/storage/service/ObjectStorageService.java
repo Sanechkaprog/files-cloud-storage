@@ -3,14 +3,23 @@ package com.alexkrug.files_cloud_storage.storage.service;
 import com.alexkrug.files_cloud_storage.storage.exception.MinioClientException;
 import com.alexkrug.files_cloud_storage.storage.exception.StatsObjectUnavailbaleGetException;
 import com.alexkrug.files_cloud_storage.storage.repository.ObjectStorage;
-import io.minio.*;
+import io.minio.GetObjectArgs;
+import io.minio.ListObjectsArgs;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
+import io.minio.RemoveObjectsArgs;
+import io.minio.Result;
+import io.minio.StatObjectArgs;
+import io.minio.StatObjectResponse;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
-import org.flywaydb.core.extensibility.InfoTelemetryModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +27,7 @@ import java.util.List;
 public class ObjectStorageService implements ObjectStorage {
     private final String BUCKET_NAME = "cloud-storage";
     private final MinioClient minioClient;
+    private static final Logger log = LoggerFactory.getLogger(ObjectStorageService.class);
 
     public ObjectStorageService(MinioClient minioClient) {
         this.minioClient = minioClient;
@@ -82,7 +92,7 @@ public class ObjectStorageService implements ObjectStorage {
     }
 
     @Override
-    public List<String> listObjects(String prefix) {
+    public List<String> listObjects(String prefix, boolean isNotDirectory) {
         try {
             List<String> objects = new ArrayList<>();
 
@@ -96,15 +106,59 @@ public class ObjectStorageService implements ObjectStorage {
 
             for (Result<Item> result : results) {
                 Item item = result.get();
-
-                if (!item.isDir()) {
-                    objects.add(item.objectName());
+                if (isNotDirectory) {
+                    if (!item.isDir()) {
+                        objects.add(item.objectName());
+                    }
                 }
+                objects.add(item.objectName());
             }
             return objects;
         } catch (Exception e) {
             throw new MinioClientException("Error listing objects from MinIO");
         }
+    }
+
+    @Override
+    public void deleteFile(String path) {
+        RemoveObjectArgs removeObjectArgs = RemoveObjectArgs
+                .builder()
+                .bucket(BUCKET_NAME)
+                .object(path)
+                .build();
+        try {
+            minioClient.removeObject(removeObjectArgs);
+        } catch (Exception e) {
+            throw new MinioClientException("Error with MinioClient");
+        }
+    }
+
+    @Override
+    public List<String> deleteFolder(String prefix) {
+        String safePrefix = prefix.endsWith("/") ? prefix : prefix + "/";
+        List<String> objects = listObjects(safePrefix, false);
+        List<DeleteObject> deleteObjects = objects
+                .stream()
+                .map(DeleteObject::new)
+                .toList();
+        if (!deleteObjects.isEmpty()) {
+            var result = minioClient.removeObjects(
+                    RemoveObjectsArgs.builder()
+                            .bucket(BUCKET_NAME)
+                            .objects(deleteObjects)
+                            .build()
+            );
+            for (Result<DeleteError> error : result) {
+                try {
+                    DeleteError err = error.get();
+                    log.error("Unable to delete {} : {}" ,err.objectName(), err.message());
+                    objects.remove(err.objectName());
+                } catch (Exception ex) {
+                    throw new MinioClientException("Error with MinioClient");
+                }
+            }
+        }
+        return objects;
     }
 }
 

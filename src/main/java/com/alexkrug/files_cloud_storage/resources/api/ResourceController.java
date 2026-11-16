@@ -1,5 +1,6 @@
 package com.alexkrug.files_cloud_storage.resources.api;
 
+import com.alexkrug.files_cloud_storage.common.tools.PathChecker;
 import com.alexkrug.files_cloud_storage.resources.api.dto.ResourceDto;
 import com.alexkrug.files_cloud_storage.resources.application.FileService;
 import jakarta.servlet.http.HttpSession;
@@ -57,13 +58,8 @@ public class ResourceController {
             HttpSession httpSession
     ) {
 
-        if (path == null ||
-                path.isBlank() ||
-                path.startsWith("/") ||
-                path.contains("\\") ||
-                java.util.Arrays.stream(path.split("/"))
-                        .anyMatch(part -> part.equals(".") || part.equals(".."))) {
-            throw new IllegalArgumentException("Invalid path");
+        if (PathChecker.checkPath(path)) {
+            throw new IllegalStateException("Invalid path");
         }
 
         String modifiedPath = httpSession.getAttribute("userId") + "/" + path;
@@ -89,5 +85,20 @@ public class ResourceController {
                                 .toString()
                 )
                 .body(responseBody);
+    }
+
+    @DeleteMapping()
+    public ResponseEntity<HttpStatus> delete(
+            @RequestParam("path") String path,
+            HttpSession session
+    ) {
+        String modifiedPath = session.getAttribute("userId") + "/" + path;
+        fileService.deleteResource(modifiedPath);
+        if (PathChecker.checkPath(modifiedPath)) {
+            throw new IllegalStateException("Invalid path");
+        }
+        return ResponseEntity.ok(
+                HttpStatus.NO_CONTENT
+        );
     }
 }

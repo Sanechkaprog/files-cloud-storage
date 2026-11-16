@@ -10,24 +10,24 @@ import com.alexkrug.files_cloud_storage.resources.exceptions.FolderNotExistsExce
 import com.alexkrug.files_cloud_storage.resources.exceptions.ResourceNotExistException;
 import com.alexkrug.files_cloud_storage.resources.infrastucture.ResourceRepository;
 import com.alexkrug.files_cloud_storage.storage.service.ObjectStorageService;
-import org.apache.juli.logging.Log;
-import org.apache.juli.logging.LogFactory;
+import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 @Service
+@Transactional
 public class FileService {
+    private static final Logger log = LoggerFactory.getLogger(FileService.class);
     private final DirectoryService directoryService;
-    private final Log log = LogFactory.getLog(FileService.class);
     private final ObjectStorageService objectStorageService;
     private final ResourceRepository resourceRepository;
 
@@ -149,34 +149,26 @@ public class FileService {
         String prefix = path + "/";
 
         List<String> objects =
-                objectStorageService.listObjects(prefix);
+                objectStorageService.listObjects(prefix, true);
 
         return outputStream -> {
 
             try (ZipOutputStream zipOutputStream =
                          new ZipOutputStream(outputStream)) {
-
                 for (String object : objects) {
-
                     String relativePath = object.substring(prefix.length());
-
                     if (relativePath.isEmpty()) {
                         continue;
                     }
-
                     ZipEntry zipEntry = new ZipEntry(relativePath);
-
                     zipOutputStream.putNextEntry(zipEntry);
-
                     try (InputStream inputStream =
                                  objectStorageService.getObject(object)) {
 
                         inputStream.transferTo(zipOutputStream);
                     }
-
                     zipOutputStream.closeEntry();
                 }
-
                 zipOutputStream.finish();
 
             } catch (IOException e) {
@@ -185,5 +177,28 @@ public class FileService {
                 );
             }
         };
+    }
+
+    public void deleteResource(String path) {
+        String parentPath = path.substring(0, path.lastIndexOf('/') + 1);
+        String name = path.substring(path.lastIndexOf('/') + 1);
+
+
+        ResourceRecord resourceRecord = resourceRepository
+                .findResourceRecordByPathAndName(parentPath, name)
+                .orElseThrow(() -> new ResourceNotExistException("Resource is not exist"));
+
+        if (ResourceType.FILE == resourceRecord.getType()) {
+            objectStorageService.deleteFile(path);
+            resourceRepository.deleteResourceRecordByPathAndName(parentPath, name);
+        } else {
+            List<String> deletedObjects = objectStorageService.deleteFolder(path);
+            for (String objectPath : deletedObjects) {
+                String objectPathModified = objectPath.endsWith("/") ? objectPath.substring(0, objectPath.lastIndexOf('/')) : objectPath;
+                String objectParentPath = objectPathModified.substring(0, objectPathModified.lastIndexOf('/') + 1);
+                String objectName = objectPathModified.substring(objectPathModified.lastIndexOf('/') + 1);
+                resourceRepository.deleteResourceRecordByPathAndName(objectParentPath, objectName);
+            }
+        }
     }
 }

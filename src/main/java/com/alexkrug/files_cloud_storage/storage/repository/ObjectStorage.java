@@ -16,7 +16,11 @@ public interface ObjectStorage {
 
     InputStream getObject(String path);
 
-    List<String> listObjects(String prefix);
+    List<String> listObjects(String prefix, boolean isNotDirectory);
+
+    void deleteFile(String path);
+
+    List<String> deleteFolder(String prefix);
 
 
 }

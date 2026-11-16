@@ -1,6 +1,6 @@
 package com.alexkrug.files_cloud_storage.resources.infrastucture;
 
-import com.alexkrug.files_cloud_storage.resources.api.dto.ResourceDto;
+
 import com.alexkrug.files_cloud_storage.resources.domain.ResourceRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -17,4 +17,7 @@ public interface ResourceRepository extends JpaRepository<ResourceRecord, UUID> 
     List<ResourceRecord> findResourceRecordByPath(String path);
 
     List<ResourceRecord> findResourceRecordByNameContaining(String name);
+
+    void deleteResourceRecordByPathAndName(String path, String name);
+
 }
