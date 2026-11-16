@@ -9,8 +9,6 @@ import com.alexkrug.files_cloud_storage.resources.exceptions.FolderIsAlreadyExis
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderNotExistsException;
 import com.alexkrug.files_cloud_storage.resources.infrastucture.ResourceRepository;
 import com.alexkrug.files_cloud_storage.storage.repository.ObjectStorage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +17,6 @@ import java.util.Optional;
 
 @Service
 public class DirectoryService {
-    private static final Logger log = LoggerFactory.getLogger(DirectoryService.class);
     private final ObjectStorage objectStorage;
     private final ResourceRepository resourceRepository;
 

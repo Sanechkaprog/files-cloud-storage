@@ -3,6 +3,7 @@ package com.alexkrug.files_cloud_storage.resources.api;
 import com.alexkrug.files_cloud_storage.common.dto.ErrorResponse;
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderIsAlreadyExistException;
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderNotExistsException;
+import com.alexkrug.files_cloud_storage.resources.exceptions.ResourceNotExistException;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,11 @@ public class ResourcesApiExceptionHandler {
         );
     }
 
-
-
+    @ExceptionHandler(ResourceNotExistException.class)
+    public ResponseEntity<ErrorResponse> resourceNotExist(ResourceNotExistException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse(ex.getMessage()),
+                HttpStatus.NOT_FOUND
+        );
+    }
 }
