@@ -37,7 +37,7 @@ public class ApiAuthExceptionHandler {
         );
     }
 
-    @ExceptionHandler({InvalidCredentialsException.class, AuthException.class})
+    @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> invalidCredentials(Exception ex) {
         return new ResponseEntity<>(
                 new ErrorResponse(ex.getMessage()),

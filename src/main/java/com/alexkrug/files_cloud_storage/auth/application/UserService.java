@@ -4,6 +4,7 @@ import com.alexkrug.files_cloud_storage.auth.domain.User;
 import com.alexkrug.files_cloud_storage.auth.exceptions.InvalidCredentialsException;
 import com.alexkrug.files_cloud_storage.auth.exceptions.NicknameIsTakenException;
 import com.alexkrug.files_cloud_storage.auth.infrastructure.UserRepository;
+import com.alexkrug.files_cloud_storage.storage.repository.ObjectStorage;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.UploadObjectArgs;
@@ -26,16 +27,16 @@ import java.util.UUID;
 @Transactional
 public class UserService  {
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder; //TODO DELEGATE SECURITY LOGIC!!!!!
+    private final ObjectStorage objectStorage;
     private final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final AuthenticationManager authenticationManager;
-    private final MinioClient minioClient;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, MinioClient minioClient) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, ObjectStorage objectStorage) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
-        this.minioClient = minioClient;
+        this.objectStorage = objectStorage;
     }
 
     public String signUp(String username, String password) {
@@ -49,17 +50,9 @@ public class UserService  {
         userRepository.save(user);
 
         UUID uuid = user.getUserId();
-        try {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket("cloud-storage")
-                            .object( uuid + "/")
-                            .stream(new ByteArrayInputStream(new byte[0]), 0, -1)
-                            .build()
-            );
-        } catch (Exception e) {
-            throw new RuntimeException();
-        }
+        String initialBucketPath = uuid + "/";
+
+        objectStorage.createDirectory(initialBucketPath);
 
         logger.info("User was saved in db");
         return user.getUsername();

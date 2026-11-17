@@ -1,6 +1,9 @@
 package com.alexkrug.files_cloud_storage.common.exchandler;
 
+import com.alexkrug.files_cloud_storage.auth.exceptions.AuthException;
+import com.alexkrug.files_cloud_storage.auth.exceptions.InvalidCredentialsException;
 import com.alexkrug.files_cloud_storage.common.dto.ErrorResponse;
+import com.alexkrug.files_cloud_storage.storage.exception.MinioClientException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +33,22 @@ public class BaseExceptionHandler {
         return new ResponseEntity<>(
                 errorResponses,
                 HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(MinioClientException.class)
+    public ResponseEntity<ErrorResponse> minioClientException(MinioClientException ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse(ex.getMessage()),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ErrorResponse> invalidCredentials(Exception ex) {
+        return new ResponseEntity<>(
+                new ErrorResponse(ex.getMessage()),
+                HttpStatus.UNAUTHORIZED
         );
     }
 }

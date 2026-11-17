@@ -24,7 +24,6 @@ public class ResourceRecord {
     @Size(max = 255)
     private String name;
 
-    @Null
     private Long size;
 
     @NotNull
@@ -74,5 +73,16 @@ public class ResourceRecord {
 
     public void setType(ResourceType type) {
         this.type = type;
+    }
+
+    @Override
+    public String toString() {
+        return "ResourceRecord{" +
+                "resourceId=" + resourceId +
+                ", path='" + path + '\'' +
+                ", name='" + name + '\'' +
+                ", size=" + size +
+                ", type=" + type +
+                '}';
     }
 }
