@@ -39,6 +39,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request ->
                         request.requestMatchers("/api/auth/sign-in", "/api/auth/sign-up")
                                 .permitAll()
+                                .requestMatchers(
+                                        "/",
+                                        "/index.html",
+                                        "/config.js",
+                                        "/assets/**",
+                                        "/favicon.ico",
+                                        "/login",
+                                        "/registration"
+                                ).permitAll()
                                 .anyRequest().authenticated())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

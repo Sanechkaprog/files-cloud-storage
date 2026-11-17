@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -354,12 +355,6 @@ public class FileService {
                 pathWithoutPrefix
         );
     }
-
-
-
-
-
-
 
 
     private void deleteResourcesFromDataBase(List<String> resources) {
