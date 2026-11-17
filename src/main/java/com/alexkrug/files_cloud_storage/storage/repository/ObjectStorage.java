@@ -22,5 +22,7 @@ public interface ObjectStorage {
 
     List<String> deleteFolder(String prefix);
 
+    void moveFile(String from, String to);
+
 
 }

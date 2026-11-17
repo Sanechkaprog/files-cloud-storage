@@ -3,15 +3,7 @@ package com.alexkrug.files_cloud_storage.storage.service;
 import com.alexkrug.files_cloud_storage.storage.exception.MinioClientException;
 import com.alexkrug.files_cloud_storage.storage.exception.StatsObjectUnavailbaleGetException;
 import com.alexkrug.files_cloud_storage.storage.repository.ObjectStorage;
-import io.minio.GetObjectArgs;
-import io.minio.ListObjectsArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.RemoveObjectArgs;
-import io.minio.RemoveObjectsArgs;
-import io.minio.Result;
-import io.minio.StatObjectArgs;
-import io.minio.StatObjectResponse;
+import io.minio.*;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
@@ -110,8 +102,9 @@ public class ObjectStorageService implements ObjectStorage {
                     if (!item.isDir()) {
                         objects.add(item.objectName());
                     }
+                } else {
+                    objects.add(item.objectName());
                 }
-                objects.add(item.objectName());
             }
             return objects;
         } catch (Exception e) {
@@ -159,6 +152,28 @@ public class ObjectStorageService implements ObjectStorage {
             }
         }
         return objects;
+    }
+
+    @Override
+    public void moveFile(String from, String to) {
+        CopySource copySource = CopySource
+                .builder()
+                .bucket(BUCKET_NAME)
+                .object(from)
+                .build();
+
+        CopyObjectArgs copyObjectArgs = CopyObjectArgs
+                .builder()
+                .bucket(BUCKET_NAME)
+                .object(to)
+                .source(copySource)
+                .build();
+
+        try {
+            minioClient.copyObject(copyObjectArgs);
+        } catch (Exception e) {
+            throw new MinioClientException("Error with MinioClient");
+        }
     }
 }
 

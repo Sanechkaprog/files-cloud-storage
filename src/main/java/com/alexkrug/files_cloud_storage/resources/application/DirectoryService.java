@@ -118,7 +118,7 @@ public class DirectoryService {
         String parentPath = path.substring(0, lastIndex + 1);
 
         if (parentPath.isEmpty()) {
-            parentPath = "/";
+            return true;
         }
 
         String name = path.substring(lastIndex + 1);

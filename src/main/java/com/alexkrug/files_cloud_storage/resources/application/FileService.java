@@ -1,12 +1,12 @@
 package com.alexkrug.files_cloud_storage.resources.application;
 
-import com.alexkrug.files_cloud_storage.resources.api.dto.DirectoryDto;
 import com.alexkrug.files_cloud_storage.resources.api.dto.FileDto;
 import com.alexkrug.files_cloud_storage.resources.api.dto.ResourceDto;
 import com.alexkrug.files_cloud_storage.resources.domain.ResourceRecord;
 import com.alexkrug.files_cloud_storage.resources.domain.ResourceType;
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderIsAlreadyExistException;
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderNotExistsException;
+import com.alexkrug.files_cloud_storage.resources.exceptions.ResourceIsAlreadyExistException;
 import com.alexkrug.files_cloud_storage.resources.exceptions.ResourceNotExistException;
 import com.alexkrug.files_cloud_storage.resources.infrastucture.ResourceRepository;
 import com.alexkrug.files_cloud_storage.resources.tools.ResourceMapper;
@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -201,15 +200,7 @@ public class FileService {
             resourceRepository.deleteResourceRecordByPathAndName(parentPath, name);
         } else {
             List<String> deletedObjects = objectStorageService.deleteFolder(path);
-            for (String objectPath : deletedObjects) {
-                String objectPathModified = objectPath.endsWith("/") ? objectPath.substring(0, objectPath.lastIndexOf('/')) : objectPath;
-
-                String objectParentPath = objectPathModified.substring(0, objectPathModified.lastIndexOf('/') + 1);
-
-                String objectName = objectPathModified.substring(objectPathModified.lastIndexOf('/') + 1);
-
-                resourceRepository.deleteResourceRecordByPathAndName(objectParentPath, objectName);
-            }
+            deleteResourcesFromDataBase(deletedObjects);
         }
     }
 
@@ -235,5 +226,151 @@ public class FileService {
                 resourceMapper.toFileDto(resourceRecord, pathWithoutPrefix) :
                 resourceMapper.toDirectoryDto(resourceRecord, pathWithoutPrefix);
 
+    }
+
+    public ResourceDto moveResource(String from, String to) {
+
+        String safeFrom = from.endsWith("/")
+                ? from.substring(0, from.length() - 1)
+                : from;
+
+        String safeTo = to.endsWith("/")
+                ? to.substring(0, to.length() - 1)
+                : to;
+
+        int fromIndex = safeFrom.lastIndexOf('/');
+        int toIndex = safeTo.lastIndexOf('/');
+
+        String fromParentPath = safeFrom.substring(0, fromIndex + 1);
+        String fromName = safeFrom.substring(fromIndex + 1);
+
+        String toParentPath = safeTo.substring(0, toIndex + 1);
+        String toName = safeTo.substring(toIndex + 1);
+
+        if (fromName.isBlank() || toName.isBlank()) {
+            throw new IllegalStateException("Invalid resource name");
+        }
+
+        if (safeFrom.equals(safeTo)) {
+            throw new IllegalStateException("Source and destination are identical");
+        }
+
+        ResourceRecord resourceRecord = resourceRepository
+                .findResourceRecordByPathAndName(fromParentPath, fromName)
+                .orElseThrow(() ->
+                        new ResourceNotExistException("Resource does not exist")
+                );
+
+        if (resourceRepository
+                .findResourceRecordByPathAndName(toParentPath, toName)
+                .isPresent()) {
+
+            throw new ResourceIsAlreadyExistException(
+                    "Resource already exists"
+            );
+        }
+
+        if (resourceRecord.getType() == ResourceType.DIRECTORY) {
+
+            String oldPrefix = safeFrom + "/";
+
+            if (safeTo.startsWith(oldPrefix)) {
+                throw new IllegalStateException(
+                        "Cannot move directory into itself"
+                );
+            }
+        }
+
+        if (resourceRecord.getType() == ResourceType.FILE) {
+
+            objectStorageService.moveFile(safeFrom, safeTo);
+
+            resourceRecord.setPath(toParentPath);
+            resourceRecord.setName(toName);
+
+            resourceRepository.saveAndFlush(resourceRecord);
+
+            objectStorageService.deleteFile(safeFrom);
+
+            String pathWithoutPrefix =
+                    toParentPath.substring(toParentPath.indexOf('/') + 1);
+
+            if (pathWithoutPrefix.isEmpty()) {
+                pathWithoutPrefix = "/";
+            }
+
+            return resourceMapper.toFileDto(
+                    resourceRecord,
+                    pathWithoutPrefix
+            );
+        }
+
+        String oldPrefix = safeFrom + "/";
+        String newPrefix = safeTo + "/";
+
+        List<String> objects =
+                objectStorageService.listObjects(oldPrefix, false);
+
+        for (String object : objects) {
+
+            String relativePath =
+                    object.substring(oldPrefix.length());
+
+            String newObjectPath = newPrefix + relativePath;
+
+            objectStorageService.moveFile(object, newObjectPath);
+        }
+
+        List<ResourceRecord> descendants =
+                resourceRepository.findResourceRecordByPathStartingWith(
+                        oldPrefix
+                );
+
+        for (ResourceRecord descendant : descendants) {
+
+            String relativePath =
+                    descendant.getPath().substring(oldPrefix.length());
+
+            descendant.setPath(newPrefix + relativePath);
+        }
+
+        resourceRecord.setPath(toParentPath);
+        resourceRecord.setName(toName);
+
+        resourceRepository.saveAll(descendants);
+        resourceRepository.saveAndFlush(resourceRecord);
+
+        objectStorageService.deleteFolder(oldPrefix);
+
+        String pathWithoutPrefix =
+                toParentPath.substring(toParentPath.indexOf('/') + 1);
+
+        if (pathWithoutPrefix.isEmpty()) {
+            pathWithoutPrefix = "/";
+        }
+
+        return resourceMapper.toDirectoryDto(
+                resourceRecord,
+                pathWithoutPrefix
+        );
+    }
+
+
+
+
+
+
+
+
+    private void deleteResourcesFromDataBase(List<String> resources) {
+        for (String objectPath : resources) {
+            String objectPathModified = objectPath.endsWith("/") ? objectPath.substring(0, objectPath.lastIndexOf('/')) : objectPath;
+
+            String objectParentPath = objectPathModified.substring(0, objectPathModified.lastIndexOf('/') + 1);
+
+            String objectName = objectPathModified.substring(objectPathModified.lastIndexOf('/') + 1);
+
+            resourceRepository.deleteResourceRecordByPathAndName(objectParentPath, objectName);
+        }
     }
 }

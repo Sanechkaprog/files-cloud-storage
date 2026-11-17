@@ -125,6 +125,33 @@ public class ResourceController {
                 fileService.getResource(modifiedPath),
                 HttpStatus.OK
         );
-
     }
+
+
+    @PostMapping("/move")
+    public ResponseEntity<ResourceDto> move(
+            @RequestParam("from") String from,
+            @RequestParam("to") String to,
+            HttpSession httpSession
+    ) {
+        if (PathChecker.isInvalidPath(from) ||
+                PathChecker.isInvalidPath(to)) {
+            throw new IllegalStateException("Invalid path");
+        }
+
+        String userId = String.valueOf(
+                httpSession.getAttribute("userId")
+        );
+
+        String modifiedFrom = userId + "/" + from;
+        String modifiedTo = userId + "/" + to;
+
+        ResourceDto resourceDto = fileService.moveResource(
+                modifiedFrom,
+                modifiedTo
+        );
+
+        return ResponseEntity.ok(resourceDto);
+    }
+
 }

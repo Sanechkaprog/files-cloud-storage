@@ -20,4 +20,7 @@ public interface ResourceRepository extends JpaRepository<ResourceRecord, UUID> 
 
     void deleteResourceRecordByPathAndName(String path, String name);
 
+    List<ResourceRecord> findResourceRecordByPathStartingWith(String path);
+
+
 }
