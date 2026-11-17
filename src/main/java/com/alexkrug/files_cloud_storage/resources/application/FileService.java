@@ -9,6 +9,7 @@ import com.alexkrug.files_cloud_storage.resources.exceptions.FolderIsAlreadyExis
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderNotExistsException;
 import com.alexkrug.files_cloud_storage.resources.exceptions.ResourceNotExistException;
 import com.alexkrug.files_cloud_storage.resources.infrastucture.ResourceRepository;
+import com.alexkrug.files_cloud_storage.resources.tools.ResourceMapper;
 import com.alexkrug.files_cloud_storage.storage.service.ObjectStorageService;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -30,11 +32,13 @@ public class FileService {
     private final DirectoryService directoryService;
     private final ObjectStorageService objectStorageService;
     private final ResourceRepository resourceRepository;
+    private final ResourceMapper resourceMapper;
 
-    public FileService(DirectoryService directoryService, ObjectStorageService objectStorageService, ResourceRepository resourceRepository) {
+    public FileService(DirectoryService directoryService, ObjectStorageService objectStorageService, ResourceRepository resourceRepository, ResourceMapper resourceMapper) {
         this.directoryService = directoryService;
         this.objectStorageService = objectStorageService;
         this.resourceRepository = resourceRepository;
+        this.resourceMapper = resourceMapper;
     }
 
     public List<ResourceDto> upload(String path, List<MultipartFile> multipartFiles) {
@@ -46,11 +50,15 @@ public class FileService {
 
         for (MultipartFile multipartFile : multipartFiles) {
             String filePath = modifiedPath + multipartFile.getOriginalFilename();
+
             dtos.addAll(directoryService.createDirectories(filePath));
+
             Long size = multipartFile.getSize();
+
             if (directoryService.isExistFolder(filePath)) {
                 throw new FolderIsAlreadyExistException("File is already exist");
             }
+
             try (InputStream is = multipartFile.getInputStream()) {
                 objectStorageService.createFile(filePath, is, size);
                 FileDto fileDto = new FileDto(
@@ -59,6 +67,7 @@ public class FileService {
                         size,
                         ResourceType.FILE
                 );
+
                 dtos.add(fileDto);
                 ResourceRecord resourceRecord = new ResourceRecord(
                         filePath.substring(0, filePath.lastIndexOf('/') + 1),
@@ -66,7 +75,9 @@ public class FileService {
                         size,
                         ResourceType.FILE
                 );
+
                 resourceRepository.save(resourceRecord);
+
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -76,26 +87,22 @@ public class FileService {
 
     public List<ResourceDto> search(String query) {
         List<ResourceDto> dtos = new ArrayList<>();
+
         List<ResourceRecord> resourceRecords = resourceRepository.findResourceRecordByNameContaining(query);
+
         for (ResourceRecord resourceRecord : resourceRecords) {
             String path = resourceRecord.getPath();
+
             String pathWithoutPrefix = path.substring(path.indexOf('/') + 1);
             if (pathWithoutPrefix.isEmpty()) {
                 pathWithoutPrefix = "/";
             }
-            if (ResourceType.FILE.equals(resourceRecord.getType())) {
-                dtos.add(new FileDto(
-                        pathWithoutPrefix,
-                        resourceRecord.getName(),
-                        resourceRecord.getSize(),
-                        resourceRecord.getType()
-                ));
+
+            if (ResourceType.FILE == resourceRecord.getType()) {
+                dtos.add(resourceMapper.toFileDto(resourceRecord, pathWithoutPrefix));
+
             } else {
-                dtos.add(new DirectoryDto(
-                        pathWithoutPrefix,
-                        resourceRecord.getName(),
-                        resourceRecord.getType()
-                ));
+                dtos.add(resourceMapper.toDirectoryDto(resourceRecord, pathWithoutPrefix));
             }
         }
         return dtos;
@@ -181,6 +188,7 @@ public class FileService {
 
     public void deleteResource(String path) {
         String parentPath = path.substring(0, path.lastIndexOf('/') + 1);
+
         String name = path.substring(path.lastIndexOf('/') + 1);
 
 
@@ -195,10 +203,37 @@ public class FileService {
             List<String> deletedObjects = objectStorageService.deleteFolder(path);
             for (String objectPath : deletedObjects) {
                 String objectPathModified = objectPath.endsWith("/") ? objectPath.substring(0, objectPath.lastIndexOf('/')) : objectPath;
+
                 String objectParentPath = objectPathModified.substring(0, objectPathModified.lastIndexOf('/') + 1);
+
                 String objectName = objectPathModified.substring(objectPathModified.lastIndexOf('/') + 1);
+
                 resourceRepository.deleteResourceRecordByPathAndName(objectParentPath, objectName);
             }
         }
+    }
+
+    public ResourceDto getResource(String path) {
+        String pathWithoutSuffix = path.endsWith("/") ? path.substring(0, path.lastIndexOf('/')) : path;
+
+        String parentPath = pathWithoutSuffix.substring(0, pathWithoutSuffix.lastIndexOf('/') + 1);
+
+        String name = pathWithoutSuffix.substring(pathWithoutSuffix.lastIndexOf('/') + 1);
+
+        ResourceRecord resourceRecord = resourceRepository.findResourceRecordByPathAndName(parentPath, name)
+                .orElseThrow(() -> new ResourceNotExistException("Resource is not exist"));
+
+        String resourcePath = resourceRecord.getPath();
+
+        String pathWithoutPrefix = resourcePath.substring(resourcePath.indexOf('/') + 1);
+
+        if (pathWithoutPrefix.isEmpty()) {
+            pathWithoutPrefix = "/";
+        }
+
+        return resourceRecord.getType() == ResourceType.FILE ?
+                resourceMapper.toFileDto(resourceRecord, pathWithoutPrefix) :
+                resourceMapper.toDirectoryDto(resourceRecord, pathWithoutPrefix);
+
     }
 }

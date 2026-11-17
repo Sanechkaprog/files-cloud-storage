@@ -27,13 +27,17 @@ public class ResourceController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<ResourceDto>> upload(
+
             @Pattern(regexp = "^([^<>:\"/\\\\|?*\\x00-\\x1F]+/)*[^<>:\"/\\\\|?*\\x00-\\x1F]+$",
                     message = "Path must be like file1/file2/file3")
             @RequestParam("path") String path,
+
             @RequestParam("files") List<MultipartFile> files,
             HttpSession httpSession
+
             ) {
             String modifiedPath = httpSession.getAttribute("userId") + "/" + path;
+
         return new ResponseEntity<>(
                 fileService.upload(modifiedPath, files),
                 HttpStatus.CREATED
@@ -41,7 +45,7 @@ public class ResourceController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ResourceDto>> searchResource(
+    public ResponseEntity<List<ResourceDto>> searchResources(
             @NotEmpty
             @RequestParam("query") String query
     ) {
@@ -54,11 +58,13 @@ public class ResourceController {
 
     @GetMapping("/download")
     public ResponseEntity<StreamingResponseBody> download(
+
             @RequestParam("path") String path,
+
             HttpSession httpSession
     ) {
 
-        if (PathChecker.checkPath(path)) {
+        if (PathChecker.isInvalidPath(path)) {
             throw new IllegalStateException("Invalid path");
         }
 
@@ -93,12 +99,32 @@ public class ResourceController {
             HttpSession session
     ) {
         String modifiedPath = session.getAttribute("userId") + "/" + path;
-        fileService.deleteResource(modifiedPath);
-        if (PathChecker.checkPath(modifiedPath)) {
+
+        if (PathChecker.isInvalidPath(modifiedPath)) {
             throw new IllegalStateException("Invalid path");
         }
+
+        fileService.deleteResource(modifiedPath);
         return ResponseEntity.ok(
                 HttpStatus.NO_CONTENT
         );
+    }
+
+    @GetMapping()
+    public ResponseEntity<ResourceDto> getResource(
+            @RequestParam("path") String path,
+            HttpSession session
+    ) {
+        String modifiedPath = session.getAttribute("userId") + "/" + path;
+
+        if (PathChecker.isInvalidPath(path)) {
+           throw new IllegalStateException("Invalid path");
+        }
+
+        return new ResponseEntity<>(
+                fileService.getResource(modifiedPath),
+                HttpStatus.OK
+        );
+
     }
 }
