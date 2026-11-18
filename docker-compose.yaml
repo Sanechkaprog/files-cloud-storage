@@ -38,9 +38,18 @@ services:
     networks:
       - my-net
 
+  redis:
+    image: redis:latest
+    container_name: storage-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
 volumes:
   volume-db:
   minio-volume:
+  redis_data:
 
 networks:
   my-net:

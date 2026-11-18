@@ -1,12 +1,10 @@
 package com.alexkrug.files_cloud_storage.resources.api;
 
-import com.alexkrug.files_cloud_storage.common.tools.PathChecker;
 import com.alexkrug.files_cloud_storage.resources.api.dto.ResourceDto;
-import com.alexkrug.files_cloud_storage.resources.application.FileService;
+import com.alexkrug.files_cloud_storage.resources.application.ResourceService;
 import com.alexkrug.files_cloud_storage.resources.tools.PathResolver;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
@@ -22,11 +20,10 @@ import java.util.List;
 @RequestMapping(value = "/api/resource")
 @Validated
 public class ResourceController {
-    private static final Logger log = LoggerFactory.getLogger(ResourceController.class);
-    private final FileService fileService;
+    private final ResourceService resourceService;
 
-    public ResourceController(FileService fileService) {
-        this.fileService = fileService;
+    public ResourceController(ResourceService resourceService) {
+        this.resourceService = resourceService;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -41,7 +38,7 @@ public class ResourceController {
             String modifiedPath = httpSession.getAttribute("userId") + "/" + path;
 
         return new ResponseEntity<>(
-                fileService.upload(modifiedPath, files),
+                resourceService.upload(modifiedPath, files),
                 HttpStatus.CREATED
         );
     }
@@ -52,7 +49,7 @@ public class ResourceController {
             @RequestParam("query") String query
     ) {
         return new ResponseEntity<>(
-                fileService.search(query),
+                resourceService.search(query),
                 HttpStatus.OK
         );
     }
@@ -73,7 +70,7 @@ public class ResourceController {
             modifiedPath = httpSession.getAttribute("userId") + "/" + path;
         }
 
-        boolean isDirectory = fileService.isDirectory(modifiedPath);
+        boolean isDirectory = resourceService.isDirectory(modifiedPath);
 
         String rawPath = PathResolver.getPathWithoutSuffix("/");
 
@@ -84,7 +81,7 @@ public class ResourceController {
         }
 
         StreamingResponseBody responseBody =
-                fileService.download(modifiedPath);
+                resourceService.download(modifiedPath);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -111,7 +108,7 @@ public class ResourceController {
             modifiedPath = session.getAttribute("userId") + "/" + path;
         }
 
-        fileService.deleteResource(modifiedPath);
+        resourceService.deleteResource(modifiedPath);
 
         return ResponseEntity.ok(
                 HttpStatus.NO_CONTENT
@@ -133,7 +130,7 @@ public class ResourceController {
 
 
         return new ResponseEntity<>(
-                fileService.getResource(modifiedPath),
+                resourceService.getResource(modifiedPath),
                 HttpStatus.OK
         );
     }
@@ -164,7 +161,7 @@ public class ResourceController {
             modifiedTo = userId + "/" + to;
         }
 
-        ResourceDto resourceDto = fileService.moveResource(
+        ResourceDto resourceDto = resourceService.moveResource(
                 modifiedFrom,
                 modifiedTo
         );

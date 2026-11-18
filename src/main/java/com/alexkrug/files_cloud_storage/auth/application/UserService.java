@@ -5,9 +5,6 @@ import com.alexkrug.files_cloud_storage.auth.exceptions.InvalidCredentialsExcept
 import com.alexkrug.files_cloud_storage.auth.exceptions.NicknameIsTakenException;
 import com.alexkrug.files_cloud_storage.auth.infrastructure.UserRepository;
 import com.alexkrug.files_cloud_storage.storage.repository.ObjectStorage;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.UploadObjectArgs;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,18 +15,19 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.io.ByteArrayInputStream;
 import java.util.UUID;
-
 
 @Service
 @Transactional
 public class UserService  {
     private final UserRepository userRepository;
+
     private final PasswordEncoder passwordEncoder;
+
     private final ObjectStorage objectStorage;
+
     private final Logger logger = LoggerFactory.getLogger(UserService.class);
+
     private final AuthenticationManager authenticationManager;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, ObjectStorage objectStorage) {
@@ -44,12 +42,17 @@ public class UserService  {
             throw new NicknameIsTakenException("Nickname is already taken");
         }
         User user = new User();
+
         var encodedPassword = passwordEncoder.encode(password);
+
         user.setUsername(username);
+
         user.setPassword(encodedPassword);
+
         userRepository.save(user);
 
         UUID uuid = user.getUserId();
+
         String initialBucketPath = uuid + "/";
 
         objectStorage.createDirectory(initialBucketPath);
@@ -62,9 +65,13 @@ public class UserService  {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
         try {
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
+
             logger.info("Authentication passed");
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
+
             return authentication;
+
         } catch (AuthenticationException e) {
             throw new InvalidCredentialsException("Invalid credentials");
         }

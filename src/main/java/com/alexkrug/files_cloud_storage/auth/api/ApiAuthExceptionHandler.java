@@ -2,9 +2,7 @@ package com.alexkrug.files_cloud_storage.auth.api;
 
 import com.alexkrug.files_cloud_storage.auth.exceptions.InvalidCredentialsException;
 import com.alexkrug.files_cloud_storage.auth.exceptions.NicknameIsTakenException;
-import com.alexkrug.files_cloud_storage.auth.exceptions.AuthException;
 import com.alexkrug.files_cloud_storage.common.dto.ErrorResponse;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,7 +11,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.List;
 
 @RestControllerAdvice(basePackages = "com.alexkrug.files_cloud_storage.auth")
-@Order(1)
 public class ApiAuthExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<List<ErrorResponse>> invalidSize(MethodArgumentNotValidException ex) {
