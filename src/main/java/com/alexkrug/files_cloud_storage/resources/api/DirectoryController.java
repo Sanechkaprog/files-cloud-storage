@@ -5,7 +5,6 @@ import com.alexkrug.files_cloud_storage.resources.api.dto.DirectoryDto;
 import com.alexkrug.files_cloud_storage.resources.api.dto.ResourceDto;
 import com.alexkrug.files_cloud_storage.resources.application.DirectoryService;
 import jakarta.servlet.http.HttpSession;
-import jakarta.validation.constraints.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -27,8 +26,6 @@ public class DirectoryController {
     @PostMapping()
     public ResponseEntity<DirectoryDto> setDirectory(
             @RequestParam(name = "path")
-            @Pattern(regexp = "^([^<>:\"/\\\\|?*\\x00-\\x1F]+/)*[^<>:\"/\\\\|?*\\x00-\\x1F]+$",
-                    message = "Path must be like file1/file2/file3")
             String path,
             HttpSession session) {
 
@@ -44,12 +41,10 @@ public class DirectoryController {
     @GetMapping()
     public ResponseEntity<List<ResourceDto>> getDirectory(
             @RequestParam(name = "path")
-            @Pattern(regexp = "^([^<>:\"/\\\\|?*\\x00-\\x1F]+/)*[^<>:\"/\\\\|?*\\x00-\\x1F]+$",
-                    message = "Path must be like file1/file2/file3")
             String path,
             HttpSession session
     ) {
-        String modifiedPath = session.getAttribute("userId") + "/" + path + "/";
+        String modifiedPath = session.getAttribute("userId") + "/" + path;
         return new ResponseEntity<>(
                 directoryService.getDirectoryResources(modifiedPath),
                 HttpStatus.OK

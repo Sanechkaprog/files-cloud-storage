@@ -27,7 +27,7 @@ import java.util.UUID;
 @Transactional
 public class UserService  {
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; //TODO DELEGATE SECURITY LOGIC!!!!!
+    private final PasswordEncoder passwordEncoder;
     private final ObjectStorage objectStorage;
     private final Logger logger = LoggerFactory.getLogger(UserService.class);
     private final AuthenticationManager authenticationManager;

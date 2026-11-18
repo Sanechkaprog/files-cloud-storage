@@ -3,9 +3,12 @@ package com.alexkrug.files_cloud_storage.resources.api;
 import com.alexkrug.files_cloud_storage.common.tools.PathChecker;
 import com.alexkrug.files_cloud_storage.resources.api.dto.ResourceDto;
 import com.alexkrug.files_cloud_storage.resources.application.FileService;
+import com.alexkrug.files_cloud_storage.resources.tools.PathResolver;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +22,7 @@ import java.util.List;
 @RequestMapping(value = "/api/resource")
 @Validated
 public class ResourceController {
+    private static final Logger log = LoggerFactory.getLogger(ResourceController.class);
     private final FileService fileService;
 
     public ResourceController(FileService fileService) {
@@ -28,11 +32,9 @@ public class ResourceController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<ResourceDto>> upload(
 
-            @Pattern(regexp = "^([^<>:\"/\\\\|?*\\x00-\\x1F]+/)*[^<>:\"/\\\\|?*\\x00-\\x1F]+$",
-                    message = "Path must be like file1/file2/file3")
             @RequestParam("path") String path,
 
-            @RequestParam("files") List<MultipartFile> files,
+            @RequestParam("object") List<MultipartFile> files,
             HttpSession httpSession
 
             ) {
@@ -63,19 +65,22 @@ public class ResourceController {
 
             HttpSession httpSession
     ) {
+        String modifiedPath;
 
-        if (PathChecker.isInvalidPath(path)) {
-            throw new IllegalStateException("Invalid path");
+        if (path.startsWith("/")) {
+            modifiedPath = httpSession.getAttribute("userId") + path;
+        } else {
+            modifiedPath = httpSession.getAttribute("userId") + "/" + path;
         }
-
-        String modifiedPath = httpSession.getAttribute("userId") + "/" + path;
 
         boolean isDirectory = fileService.isDirectory(modifiedPath);
 
-        String filename = path.substring(path.lastIndexOf('/') + 1);
+        String rawPath = PathResolver.getPathWithoutSuffix("/");
+
+        String resourceName = PathResolver.getFileName(rawPath);
 
         if (isDirectory) {
-            filename += ".zip";
+            resourceName += ".zip";
         }
 
         StreamingResponseBody responseBody =
@@ -86,7 +91,7 @@ public class ResourceController {
                 .header(
                         "Content-Disposition",
                         ContentDisposition.attachment()
-                                .filename(filename, StandardCharsets.UTF_8)
+                                .filename(resourceName, StandardCharsets.UTF_8)
                                 .build()
                                 .toString()
                 )
@@ -98,13 +103,16 @@ public class ResourceController {
             @RequestParam("path") String path,
             HttpSession session
     ) {
-        String modifiedPath = session.getAttribute("userId") + "/" + path;
+        String modifiedPath;
 
-        if (PathChecker.isInvalidPath(modifiedPath)) {
-            throw new IllegalStateException("Invalid path");
+        if (path.startsWith("/")) {
+            modifiedPath = session.getAttribute("userId") + path;
+        } else {
+            modifiedPath = session.getAttribute("userId") + "/" + path;
         }
 
         fileService.deleteResource(modifiedPath);
+
         return ResponseEntity.ok(
                 HttpStatus.NO_CONTENT
         );
@@ -115,11 +123,14 @@ public class ResourceController {
             @RequestParam("path") String path,
             HttpSession session
     ) {
-        String modifiedPath = session.getAttribute("userId") + "/" + path;
+        String modifiedPath;
 
-        if (PathChecker.isInvalidPath(path)) {
-           throw new IllegalStateException("Invalid path");
+        if (path.startsWith("/")) {
+            modifiedPath = session.getAttribute("userId") + path;
+        } else {
+            modifiedPath = session.getAttribute("userId") + "/" + path;
         }
+
 
         return new ResponseEntity<>(
                 fileService.getResource(modifiedPath),
@@ -134,17 +145,24 @@ public class ResourceController {
             @RequestParam("to") String to,
             HttpSession httpSession
     ) {
-        if (PathChecker.isInvalidPath(from) ||
-                PathChecker.isInvalidPath(to)) {
-            throw new IllegalStateException("Invalid path");
-        }
+        String modifiedFrom;
+        String modifiedTo;
 
         String userId = String.valueOf(
                 httpSession.getAttribute("userId")
         );
 
-        String modifiedFrom = userId + "/" + from;
-        String modifiedTo = userId + "/" + to;
+        if (from.startsWith("/")) {
+            modifiedFrom = userId  + from;
+        } else {
+            modifiedFrom = userId + "/" + from;
+        }
+
+        if (to.startsWith("/")) {
+            modifiedTo = userId + to;
+        } else {
+            modifiedTo = userId + "/" + to;
+        }
 
         ResourceDto resourceDto = fileService.moveResource(
                 modifiedFrom,
