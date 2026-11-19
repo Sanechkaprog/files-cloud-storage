@@ -1,0 +1,2 @@
+ALTER TABLE resources ALTER COLUMN type TYPE VARCHAR(20) USING type::text;
+DROP TYPE IF EXISTS resourcetype;
