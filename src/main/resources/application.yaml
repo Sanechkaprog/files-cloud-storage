@@ -17,5 +17,3 @@ spring:
       port: 6379
   session:
     timeout: 5m
-
-
