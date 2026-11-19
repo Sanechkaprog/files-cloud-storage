@@ -9,6 +9,7 @@ import com.alexkrug.files_cloud_storage.resources.exceptions.FolderNotExistsExce
 import com.alexkrug.files_cloud_storage.resources.exceptions.ResourceIsAlreadyExistException;
 import com.alexkrug.files_cloud_storage.resources.exceptions.ResourceNotExistException;
 import com.alexkrug.files_cloud_storage.resources.infrastucture.ResourceRepository;
+import com.alexkrug.files_cloud_storage.resources.tools.PathResolver;
 import com.alexkrug.files_cloud_storage.resources.tools.ResourceMapper;
 import com.alexkrug.files_cloud_storage.storage.service.ObjectStorageService;
 import jakarta.transaction.Transactional;
@@ -17,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -27,14 +27,14 @@ import java.util.zip.ZipOutputStream;
 
 @Service
 @Transactional
-public class FileService {
-    private static final Logger log = LoggerFactory.getLogger(FileService.class);
+public class ResourceService {
+    private static final Logger log = LoggerFactory.getLogger(ResourceService.class);
     private final DirectoryService directoryService;
     private final ObjectStorageService objectStorageService;
     private final ResourceRepository resourceRepository;
     private final ResourceMapper resourceMapper;
 
-    public FileService(DirectoryService directoryService, ObjectStorageService objectStorageService, ResourceRepository resourceRepository, ResourceMapper resourceMapper) {
+    public ResourceService(DirectoryService directoryService, ObjectStorageService objectStorageService, ResourceRepository resourceRepository, ResourceMapper resourceMapper) {
         this.directoryService = directoryService;
         this.objectStorageService = objectStorageService;
         this.resourceRepository = resourceRepository;
@@ -42,14 +42,16 @@ public class FileService {
     }
 
     public List<ResourceDto> upload(String path, List<MultipartFile> multipartFiles) {
-        if (!directoryService.isExistFolder(path)) {
+        if (!directoryService.isExistFolder(path) && PathResolver.getPrefixLength(path) != path.length()) {
             throw new FolderNotExistsException("Folder not exist");
         }
-        String modifiedPath = path + "/";
         List<ResourceDto> dtos = new ArrayList<>();
 
+
+
         for (MultipartFile multipartFile : multipartFiles) {
-            String filePath = modifiedPath + multipartFile.getOriginalFilename();
+
+            String filePath = path + multipartFile.getOriginalFilename();
 
             dtos.addAll(directoryService.createDirectories(filePath));
 
@@ -63,15 +65,15 @@ public class FileService {
                 objectStorageService.createFile(filePath, is, size);
                 FileDto fileDto = new FileDto(
                         filePath.substring(filePath.indexOf('/') + 1, filePath.lastIndexOf('/') + 1),
-                        filePath.substring(filePath.lastIndexOf('/') + 1),
+                        PathResolver.getFileName(path),
                         size,
                         ResourceType.FILE
                 );
 
                 dtos.add(fileDto);
                 ResourceRecord resourceRecord = new ResourceRecord(
-                        filePath.substring(0, filePath.lastIndexOf('/') + 1),
-                        filePath.substring(filePath.lastIndexOf('/') + 1),
+                        PathResolver.getParentPath(filePath),
+                        PathResolver.getFileName(filePath),
                         size,
                         ResourceType.FILE
                 );
@@ -93,7 +95,7 @@ public class FileService {
         for (ResourceRecord resourceRecord : resourceRecords) {
             String path = resourceRecord.getPath();
 
-            String pathWithoutPrefix = path.substring(path.indexOf('/') + 1);
+            String pathWithoutPrefix = PathResolver.getPathWithoutPrefix(path);
             if (pathWithoutPrefix.isEmpty()) {
                 pathWithoutPrefix = "/";
             }
@@ -109,26 +111,19 @@ public class FileService {
     }
 
     public boolean isDirectory(String path) {
-        int lastIndex = path.lastIndexOf('/');
 
-        String parentPath = path.substring(0, lastIndex + 1);
-        String name = path.substring(lastIndex + 1);
-
-        ResourceRecord record = resourceRepository
-                .findResourceRecordByPathAndName(parentPath, name)
-                .orElseThrow(() ->
-                        new FolderNotExistsException("Resource not found")
-                );
-
-        return record.getType() == ResourceType.DIRECTORY;
+        return path.endsWith("/");
     }
 
     public StreamingResponseBody download(String path) {
 
-        int lastIndex = path.lastIndexOf('/');
 
-        String parentPath = path.substring(0, lastIndex + 1);
-        String name = path.substring(lastIndex + 1);
+        String rawPath = PathResolver.getPathWithoutSuffix(path);
+
+
+        String parentPath = PathResolver.getParentPath(rawPath);
+        String name = PathResolver.getFileName(rawPath);
+
 
         ResourceRecord record = resourceRepository
                 .findResourceRecordByPathAndName(parentPath, name)
@@ -153,7 +148,7 @@ public class FileService {
             };
         }
 
-        String prefix = path + "/";
+        String prefix = rawPath + "/";
 
         List<String> objects =
                 objectStorageService.listObjects(prefix, true);
@@ -187,9 +182,12 @@ public class FileService {
     }
 
     public void deleteResource(String path) {
-        String parentPath = path.substring(0, path.lastIndexOf('/') + 1);
+        String rawPath = PathResolver.getPathWithoutSuffix(path);
 
-        String name = path.substring(path.lastIndexOf('/') + 1);
+
+        String parentPath = PathResolver.getParentPath(rawPath);
+
+        String name = PathResolver.getFileName(rawPath);
 
 
         ResourceRecord resourceRecord = resourceRepository
@@ -206,18 +204,18 @@ public class FileService {
     }
 
     public ResourceDto getResource(String path) {
-        String pathWithoutSuffix = path.endsWith("/") ? path.substring(0, path.lastIndexOf('/')) : path;
+        String pathWithoutSuffix = PathResolver.getPathWithoutSuffix(path);
 
-        String parentPath = pathWithoutSuffix.substring(0, pathWithoutSuffix.lastIndexOf('/') + 1);
+        String parentPath = PathResolver.getParentPath(pathWithoutSuffix);
 
-        String name = pathWithoutSuffix.substring(pathWithoutSuffix.lastIndexOf('/') + 1);
+        String name = PathResolver.getFileName(pathWithoutSuffix);
 
         ResourceRecord resourceRecord = resourceRepository.findResourceRecordByPathAndName(parentPath, name)
                 .orElseThrow(() -> new ResourceNotExistException("Resource is not exist"));
 
         String resourcePath = resourceRecord.getPath();
 
-        String pathWithoutPrefix = resourcePath.substring(resourcePath.indexOf('/') + 1);
+        String pathWithoutPrefix = PathResolver.getPathWithoutPrefix(resourcePath);
 
         if (pathWithoutPrefix.isEmpty()) {
             pathWithoutPrefix = "/";
@@ -231,22 +229,17 @@ public class FileService {
 
     public ResourceDto moveResource(String from, String to) {
 
-        String safeFrom = from.endsWith("/")
-                ? from.substring(0, from.length() - 1)
-                : from;
+        String safeFrom = PathResolver.getPathWithoutSuffix(from);
 
-        String safeTo = to.endsWith("/")
-                ? to.substring(0, to.length() - 1)
-                : to;
+        String safeTo = PathResolver.getPathWithoutSuffix(to);
 
-        int fromIndex = safeFrom.lastIndexOf('/');
-        int toIndex = safeTo.lastIndexOf('/');
+        String fromParentPath = PathResolver.getParentPath(safeFrom);
 
-        String fromParentPath = safeFrom.substring(0, fromIndex + 1);
-        String fromName = safeFrom.substring(fromIndex + 1);
+        String fromName = PathResolver.getFileName(safeFrom);
 
-        String toParentPath = safeTo.substring(0, toIndex + 1);
-        String toName = safeTo.substring(toIndex + 1);
+        String toParentPath = PathResolver.getParentPath(safeTo);
+
+        String toName = PathResolver.getFileName(safeTo);
 
         if (fromName.isBlank() || toName.isBlank()) {
             throw new IllegalStateException("Invalid resource name");
@@ -255,6 +248,7 @@ public class FileService {
         if (safeFrom.equals(safeTo)) {
             throw new IllegalStateException("Source and destination are identical");
         }
+
 
         ResourceRecord resourceRecord = resourceRepository
                 .findResourceRecordByPathAndName(fromParentPath, fromName)
@@ -293,8 +287,7 @@ public class FileService {
 
             objectStorageService.deleteFile(safeFrom);
 
-            String pathWithoutPrefix =
-                    toParentPath.substring(toParentPath.indexOf('/') + 1);
+            String pathWithoutPrefix = PathResolver.getPathWithoutPrefix(toParentPath);
 
             if (pathWithoutPrefix.isEmpty()) {
                 pathWithoutPrefix = "/";
@@ -343,8 +336,7 @@ public class FileService {
 
         objectStorageService.deleteFolder(oldPrefix);
 
-        String pathWithoutPrefix =
-                toParentPath.substring(toParentPath.indexOf('/') + 1);
+        String pathWithoutPrefix = PathResolver.getPathWithoutPrefix(toParentPath);
 
         if (pathWithoutPrefix.isEmpty()) {
             pathWithoutPrefix = "/";
@@ -359,11 +351,11 @@ public class FileService {
 
     private void deleteResourcesFromDataBase(List<String> resources) {
         for (String objectPath : resources) {
-            String objectPathModified = objectPath.endsWith("/") ? objectPath.substring(0, objectPath.lastIndexOf('/')) : objectPath;
+            String objectPathModified = PathResolver.getPathWithoutSuffix(objectPath);
 
-            String objectParentPath = objectPathModified.substring(0, objectPathModified.lastIndexOf('/') + 1);
+            String objectParentPath = PathResolver.getParentPath(objectPathModified);
 
-            String objectName = objectPathModified.substring(objectPathModified.lastIndexOf('/') + 1);
+            String objectName = PathResolver.getFileName(objectPath);
 
             resourceRepository.deleteResourceRecordByPathAndName(objectParentPath, objectName);
         }

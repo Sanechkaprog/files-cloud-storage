@@ -1,10 +1,11 @@
 package com.alexkrug.files_cloud_storage.common.exchandler;
 
 import com.alexkrug.files_cloud_storage.auth.exceptions.AuthException;
-import com.alexkrug.files_cloud_storage.auth.exceptions.InvalidCredentialsException;
 import com.alexkrug.files_cloud_storage.common.dto.ErrorResponse;
 import com.alexkrug.files_cloud_storage.storage.exception.MinioClientException;
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,6 +15,8 @@ import java.util.List;
 
 @RestControllerAdvice
 public class BaseExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(BaseExceptionHandler.class);
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> serverInternalExceptions(Exception ex) {
         return new ResponseEntity<>(

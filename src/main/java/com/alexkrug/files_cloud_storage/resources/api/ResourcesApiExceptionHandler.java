@@ -5,14 +5,12 @@ import com.alexkrug.files_cloud_storage.resources.exceptions.FolderIsAlreadyExis
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderNotExistsException;
 import com.alexkrug.files_cloud_storage.resources.exceptions.ResourceIsAlreadyExistException;
 import com.alexkrug.files_cloud_storage.resources.exceptions.ResourceNotExistException;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice(basePackages = "com.alexkrug.files_cloud_storage.resources")
-@Order(1)
 public class ResourcesApiExceptionHandler {
 
     @ExceptionHandler(FolderNotExistsException.class)

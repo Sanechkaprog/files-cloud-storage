@@ -8,6 +8,7 @@ import com.alexkrug.files_cloud_storage.resources.domain.ResourceType;
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderIsAlreadyExistException;
 import com.alexkrug.files_cloud_storage.resources.exceptions.FolderNotExistsException;
 import com.alexkrug.files_cloud_storage.resources.infrastucture.ResourceRepository;
+import com.alexkrug.files_cloud_storage.resources.tools.PathResolver;
 import com.alexkrug.files_cloud_storage.resources.tools.ResourceMapper;
 import com.alexkrug.files_cloud_storage.storage.repository.ObjectStorage;
 import org.springframework.stereotype.Service;
@@ -34,13 +35,14 @@ public class DirectoryService {
             throw new FolderIsAlreadyExistException("Folder is already exist");
         }
         try {
-            objectStorage.createDirectory(path + "/");
-            int lastIndex = path.lastIndexOf('/');
-            int firstIndex = path.indexOf('/');
+            objectStorage.createDirectory(path);
+            String modifiedPath = path.substring(0, path.lastIndexOf('/'));
+            int lastIndex = modifiedPath.lastIndexOf('/');
+            int firstIndex = modifiedPath.indexOf('/');
 
 
-            String parentPath = path.substring(0, lastIndex + 1);
-            String folder = path.substring(lastIndex + 1);
+            String parentPath = modifiedPath.substring(0, lastIndex + 1);
+            String folder = modifiedPath.substring(lastIndex + 1);
 
             ResourceRecord resourceRecord = new ResourceRecord(
                     parentPath,
@@ -51,7 +53,7 @@ public class DirectoryService {
 
             resourceRepository.save(resourceRecord);
 
-            String dtoPath = path.substring(firstIndex + 1, lastIndex + 1);
+            String dtoPath = modifiedPath.substring(firstIndex + 1, lastIndex + 1);
             if (dtoPath.isEmpty()) {
                 dtoPath = "/";
             }
@@ -78,7 +80,8 @@ public class DirectoryService {
         for (ResourceRecord resourceRecord : resourceRecords) {
             String resourcePath = resourceRecord.getPath();
 
-            String pathWithoutPrefix = resourcePath.substring(resourcePath.indexOf('/') + 1);
+            String pathWithoutPrefix = PathResolver.getPathWithoutPrefix(resourcePath);
+
 
             if (pathWithoutPrefix.isEmpty()) {
                 pathWithoutPrefix = "/";
@@ -98,12 +101,18 @@ public class DirectoryService {
     }
 
     public void isExistPath(String path) {
-        int lastIndex = path.lastIndexOf('/');
+        String parentPath;
 
-        String parentPath = path.substring(0, lastIndex + 1);
+        int prefixLength = PathResolver.getPrefixLength(path);
 
-        if (parentPath.isEmpty()) {
-            parentPath = "/";
+        String rawPath = PathResolver.getParentPath(path);
+
+        if (rawPath.length() == prefixLength) {
+            parentPath = path;
+        } else {
+            String pathWithoutSuffix = PathResolver.getPathWithoutSuffix(path);
+
+            parentPath = PathResolver.getParentPath(pathWithoutSuffix);
         }
         try {
             objectStorage.getStatObject(parentPath);
@@ -113,15 +122,11 @@ public class DirectoryService {
     }
 
     public boolean isExistFolder(String path) {
-        int lastIndex = path.lastIndexOf('/');
+        String pathWithoutSuffix = PathResolver.getPathWithoutSuffix(path);
 
-        String parentPath = path.substring(0, lastIndex + 1);
+        String parentPath = PathResolver.getParentPath(pathWithoutSuffix);
 
-        if (parentPath.isEmpty()) {
-            return true;
-        }
-
-        String name = path.substring(lastIndex + 1);
+        String name = PathResolver.getFileName(pathWithoutSuffix);
 
         Optional<ResourceRecord> optionalResourceRecord = resourceRepository.findResourceRecordByPathAndName(parentPath, name);
 
@@ -131,9 +136,10 @@ public class DirectoryService {
     public List<ResourceDto> createDirectories(String filePath) {
         List<String> paths = new ArrayList<>();
 
+
         List<ResourceDto> directories = new ArrayList<>();
 
-        String parentPath = filePath.substring(0, filePath.lastIndexOf('/'));
+        String parentPath = PathResolver.getParentPath(filePath);
 
         int right = parentPath.indexOf('/') + 1;
 
@@ -143,15 +149,20 @@ public class DirectoryService {
             }
             right++;
         }
-        paths.add(parentPath);
+
         for (String path : paths) {
             try {
-                addDirectory(path);
-                String pathWithoutPrefix = path.substring(path.indexOf('/') + 1);
+                addDirectory(path + "/");
 
-                String fileDtoPath = pathWithoutPrefix.substring(0, pathWithoutPrefix.lastIndexOf('/') + 1);
+                String pathWithoutPrefix = PathResolver.getPathWithoutPrefix(path);
 
-                String name = pathWithoutPrefix.substring(pathWithoutPrefix.lastIndexOf('/') + 1);
+                String fileDtoPath = PathResolver.getParentPath(pathWithoutPrefix);
+
+                String name = PathResolver.getFileName(pathWithoutPrefix);
+
+                if (fileDtoPath.equals(name)) {
+                    fileDtoPath = "/";
+                }
 
                 DirectoryDto directoryDto = new DirectoryDto(
                         fileDtoPath,
