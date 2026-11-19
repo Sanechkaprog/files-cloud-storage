@@ -13,10 +13,11 @@ import com.alexkrug.files_cloud_storage.resources.tools.PathResolver;
 import com.alexkrug.files_cloud_storage.resources.tools.ResourceMapper;
 import com.alexkrug.files_cloud_storage.storage.service.ObjectStorageService;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.zip.ZipOutputStream;
 @Service
 @Transactional
 public class ResourceService {
+    private static final Logger log = LoggerFactory.getLogger(ResourceService.class);
     private final DirectoryService directoryService;
     private final ObjectStorageService objectStorageService;
     private final ResourceRepository resourceRepository;
