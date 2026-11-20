@@ -1,15 +1,9 @@
 package com.alexkrug.files_cloud_storage.controller;
 
-import com.alexkrug.files_cloud_storage.dto.ErrorResponse;
+import com.alexkrug.files_cloud_storage.doc.ResourceApi;
 import com.alexkrug.files_cloud_storage.dto.ResourceDto;
 import com.alexkrug.files_cloud_storage.service.ResourceService;
 import com.alexkrug.files_cloud_storage.utils.PathResolver;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpStatus;
@@ -31,41 +25,12 @@ import java.util.List;
 @RestController
 @RequestMapping(value = "/api/resource")
 @Validated
-@Tag(name = "Resource controller")
-public class ResourceController {
+public class ResourceController implements ResourceApi {
     private final ResourceService resourceService;
 
     public ResourceController(ResourceService resourceService) {
         this.resourceService = resourceService;
     }
-
-    @Operation(summary = "Uploading")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Resources created",
-                    content = @Content(schema = @Schema(implementation = ResourceDto.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid body error",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "User is unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-    })
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<ResourceDto>> upload(
@@ -84,34 +49,6 @@ public class ResourceController {
         );
     }
 
-    @Operation(summary = "Resource searching")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Resource got",
-                    content = @Content(schema = @Schema(implementation = ResourceDto.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid query",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "User is unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-    })
 
     @GetMapping("/search")
     public ResponseEntity<List<ResourceDto>> searchResources(
@@ -128,40 +65,7 @@ public class ResourceController {
         );
     }
 
-    @Operation(summary = "Resource downloading")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Resource got",
-                    content = @Content(schema = @Schema(implementation = ResourceDto.class))
-            ),
 
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid path",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "User is unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Resource not found",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-    })
     @GetMapping("/download")
     public ResponseEntity<StreamingResponseBody> download(
             @RequestParam("path") String path,
@@ -201,40 +105,6 @@ public class ResourceController {
                 .body(responseBody);
     }
 
-    @Operation(summary = "Resource deleting")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "Resource deleted",
-                    content = @Content
-            ),
-
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid path",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "User is unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Resource not found",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-    })
 
     @DeleteMapping
     public ResponseEntity<HttpStatus> delete(
@@ -257,40 +127,7 @@ public class ResourceController {
         );
     }
 
-    @Operation(summary = "Resource info getting")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Resource got",
-                    content = @Content(schema = @Schema(implementation = ResourceDto.class))
-            ),
 
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid path",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "User is unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Resource not found",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-    })
     @GetMapping
     public ResponseEntity<ResourceDto> getResource(
             @RequestParam("path") String path,
@@ -312,46 +149,6 @@ public class ResourceController {
         );
     }
 
-
-    @Operation(summary = "Resources moving")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Directory got",
-                    content = @Content(schema = @Schema(implementation = ResourceDto.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid path",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "User is unauthorized",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Resource not found",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "409",
-                    description = "Resource exists",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-            ),
-
-    })
 
     @PostMapping("/move")
     public ResponseEntity<ResourceDto> move(

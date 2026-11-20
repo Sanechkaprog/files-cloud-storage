@@ -2,7 +2,6 @@ package com.alexkrug.files_cloud_storage.repository;
 
 import io.minio.StatObjectResponse;
 import org.springframework.stereotype.Repository;
-
 import java.io.InputStream;
 import java.util.List;
 
