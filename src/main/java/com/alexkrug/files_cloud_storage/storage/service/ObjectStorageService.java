@@ -151,6 +151,7 @@ public class ObjectStorageService implements ObjectStorage {
                 }
             }
         }
+
         return objects;
     }
 

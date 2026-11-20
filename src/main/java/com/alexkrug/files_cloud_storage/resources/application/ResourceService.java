@@ -351,11 +351,12 @@ public class ResourceService {
 
     private void deleteResourcesFromDataBase(List<String> resources) {
         for (String objectPath : resources) {
+
             String objectPathModified = PathResolver.getPathWithoutSuffix(objectPath);
 
             String objectParentPath = PathResolver.getParentPath(objectPathModified);
 
-            String objectName = PathResolver.getFileName(objectPath);
+            String objectName = PathResolver.getFileName(objectPathModified);
 
             resourceRepository.deleteResourceRecordByPathAndName(objectParentPath, objectName);
         }

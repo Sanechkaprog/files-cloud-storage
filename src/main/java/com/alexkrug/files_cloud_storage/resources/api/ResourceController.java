@@ -72,7 +72,6 @@ public class ResourceController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<ResourceDto>> upload(
-            @NotEmpty
             @RequestParam("path")
             String path,
 
@@ -119,7 +118,6 @@ public class ResourceController {
 
     @GetMapping("/search")
     public ResponseEntity<List<ResourceDto>> searchResources(
-            @NotEmpty
             @RequestParam("query")
             String query
     ) {
@@ -165,7 +163,6 @@ public class ResourceController {
     })
     @GetMapping("/download")
     public ResponseEntity<StreamingResponseBody> download(
-            @NotEmpty
             @RequestParam("path") String path,
 
             HttpSession httpSession
@@ -240,8 +237,8 @@ public class ResourceController {
 
     @DeleteMapping
     public ResponseEntity<HttpStatus> delete(
-            @NotEmpty
-            @RequestParam("path") String path,
+            @RequestParam("path")
+            String path,
             HttpSession session
     ) {
         String modifiedPath;
@@ -295,7 +292,6 @@ public class ResourceController {
     })
     @GetMapping
     public ResponseEntity<ResourceDto> getResource(
-            @NotEmpty
             @RequestParam("path") String path,
             HttpSession session
     ) {
@@ -358,11 +354,12 @@ public class ResourceController {
 
     @PostMapping("/move")
     public ResponseEntity<ResourceDto> move(
-            @NotEmpty
-            @RequestParam("from") String from,
+            @RequestParam("from")
+            String from,
 
-            @NotEmpty
-            @RequestParam("to") String to,
+            @RequestParam("to")
+            String to,
+
             HttpSession httpSession
     ) {
         String modifiedFrom;

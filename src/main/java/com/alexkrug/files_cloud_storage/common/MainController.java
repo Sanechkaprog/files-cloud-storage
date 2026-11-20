@@ -10,4 +10,9 @@ public class MainController {
     public String redirect() {
         return "forward:/index.html";
     }
+
+    @RequestMapping(value = "/files/**")
+    public String files() {
+        return "redirect:/login";
+    }
 }

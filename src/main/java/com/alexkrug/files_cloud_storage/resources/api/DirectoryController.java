@@ -1,6 +1,5 @@
 package com.alexkrug.files_cloud_storage.resources.api;
 
-import com.alexkrug.files_cloud_storage.auth.api.dto.MainResponse;
 import com.alexkrug.files_cloud_storage.common.dto.ErrorResponse;
 import com.alexkrug.files_cloud_storage.resources.api.dto.DirectoryDto;
 import com.alexkrug.files_cloud_storage.resources.api.dto.ResourceDto;
@@ -12,7 +11,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
-import jakarta.validation.constraints.NotEmpty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -73,14 +71,14 @@ public class DirectoryController {
 
     })
 
-    @PostMapping
+    @PostMapping()
     public ResponseEntity<DirectoryDto> setDirectory(
-            @NotEmpty
             @RequestParam(name = "path")
             String path,
             HttpSession session) {
 
         String modifiedPath = session.getAttribute("userId") + "/" + path;
+
         return
                 new ResponseEntity<>(
                         directoryService.addDirectory(modifiedPath),
@@ -123,9 +121,8 @@ public class DirectoryController {
 
     })
 
-    @GetMapping
+    @GetMapping()
     public ResponseEntity<List<ResourceDto>> getDirectory(
-            @NotEmpty
             @RequestParam(name = "path")
             String path,
             HttpSession session
