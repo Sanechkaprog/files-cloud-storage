@@ -1,8 +1,8 @@
 package com.alexkrug.files_cloud_storage;
 
-import com.alexkrug.files_cloud_storage.auth.application.UserService;
-import com.alexkrug.files_cloud_storage.auth.exceptions.InvalidCredentialsException;
-import com.alexkrug.files_cloud_storage.auth.exceptions.NicknameIsTakenException;
+import com.alexkrug.files_cloud_storage.service.UserService;
+import com.alexkrug.files_cloud_storage.exceptions.InvalidCredentialsException;
+import com.alexkrug.files_cloud_storage.exceptions.NicknameIsTakenException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
