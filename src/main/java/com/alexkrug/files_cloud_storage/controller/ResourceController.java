@@ -81,7 +81,9 @@ public class ResourceController implements ResourceApi {
         }
 
         boolean isDirectory = resourceService.isDirectory(modifiedPath);
+
         String rawPath = PathResolver.getPathWithoutSuffix("/");
+
         String resourceName = PathResolver.getFileName(rawPath);
 
         if (isDirectory) {

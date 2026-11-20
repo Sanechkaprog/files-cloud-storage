@@ -3,7 +3,7 @@ package com.alexkrug.files_cloud_storage.service;
 import com.alexkrug.files_cloud_storage.dto.DirectoryDto;
 import com.alexkrug.files_cloud_storage.dto.FileDto;
 import com.alexkrug.files_cloud_storage.dto.ResourceDto;
-import com.alexkrug.files_cloud_storage.entity.Resource;
+import com.alexkrug.files_cloud_storage.entity.ResourceRecord;
 import com.alexkrug.files_cloud_storage.entity.ResourceType;
 import com.alexkrug.files_cloud_storage.exceptions.FolderIsAlreadyExistException;
 import com.alexkrug.files_cloud_storage.exceptions.FolderNotExistsException;
@@ -11,19 +11,23 @@ import com.alexkrug.files_cloud_storage.repository.ResourceRepository;
 import com.alexkrug.files_cloud_storage.utils.PathResolver;
 import com.alexkrug.files_cloud_storage.mapper.ResourceMapper;
 import com.alexkrug.files_cloud_storage.repository.ObjectStorage;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@RequiredArgsConstructor
+
 @Service
 public class DirectoryService {
     private final ObjectStorage objectStorage;
     private final ResourceRepository resourceRepository;
     private final ResourceMapper resourceMapper;
 
+    public DirectoryService(ObjectStorage objectStorage, ResourceRepository resourceRepository, ResourceMapper resourceMapper) {
+        this.resourceRepository = resourceRepository;
+        this.objectStorage = objectStorage;
+        this.resourceMapper = resourceMapper;
+    }
 
     public DirectoryDto addDirectory(String path) {
         isExistPath(path);
@@ -35,17 +39,19 @@ public class DirectoryService {
             String modifiedPath = path.substring(0, path.lastIndexOf('/'));
             int lastIndex = modifiedPath.lastIndexOf('/');
             int firstIndex = modifiedPath.indexOf('/');
+
+
             String parentPath = modifiedPath.substring(0, lastIndex + 1);
             String folder = modifiedPath.substring(lastIndex + 1);
 
-            Resource resource = new Resource(
+            ResourceRecord resourceRecord = new ResourceRecord(
                     parentPath,
                     folder,
                     null,
                     ResourceType.DIRECTORY
             );
 
-            resourceRepository.save(resource);
+            resourceRepository.save(resourceRecord);
 
             String dtoPath = modifiedPath.substring(firstIndex + 1, lastIndex + 1);
             if (dtoPath.isEmpty()) {
@@ -69,20 +75,25 @@ public class DirectoryService {
 
         isExistPath(path);
 
-        List<Resource> resources = resourceRepository.findResourceRecordByPath(path);
+        List<ResourceRecord> resourceRecords = resourceRepository.findResourceRecordByPath(path);
 
-        for (Resource resource : resources) {
-            String resourcePath = resource.getPath();
+        for (ResourceRecord resourceRecord : resourceRecords) {
+            String resourcePath = resourceRecord.getPath();
+
             String pathWithoutPrefix = PathResolver.getPathWithoutPrefix(resourcePath);
+
+
             if (pathWithoutPrefix.isEmpty()) {
                 pathWithoutPrefix = "/";
             }
-            if (ResourceType.DIRECTORY == resource.getType()) {
-                DirectoryDto directoryDto = resourceMapper.toDirectoryDto(resource, pathWithoutPrefix);
+
+            if (ResourceType.DIRECTORY == resourceRecord.getType()) {
+                DirectoryDto directoryDto = resourceMapper.toDirectoryDto(resourceRecord, pathWithoutPrefix);
                 resourceDtos.add(directoryDto);
             }
-            if (ResourceType.FILE == resource.getType()) {
-                FileDto fileDto = resourceMapper.toFileDto(resource, pathWithoutPrefix);
+
+            if (ResourceType.FILE == resourceRecord.getType()) {
+                FileDto fileDto = resourceMapper.toFileDto(resourceRecord, pathWithoutPrefix);
                 resourceDtos.add(fileDto);
             }
         }
@@ -91,13 +102,16 @@ public class DirectoryService {
 
     public void isExistPath(String path) {
         String parentPath;
+
         int prefixLength = PathResolver.getPrefixLength(path);
+
         String rawPath = PathResolver.getParentPath(path);
 
         if (rawPath.length() == prefixLength) {
             parentPath = path;
         } else {
             String pathWithoutSuffix = PathResolver.getPathWithoutSuffix(path);
+
             parentPath = PathResolver.getParentPath(pathWithoutSuffix);
         }
         try {
@@ -109,17 +123,26 @@ public class DirectoryService {
 
     public boolean isExistFolder(String path) {
         String pathWithoutSuffix = PathResolver.getPathWithoutSuffix(path);
+
         String parentPath = PathResolver.getParentPath(pathWithoutSuffix);
+
         String name = PathResolver.getFileName(pathWithoutSuffix);
-        Optional<Resource> optionalResourceRecord = resourceRepository.findResourceRecordByPathAndName(parentPath, name);
+
+        Optional<ResourceRecord> optionalResourceRecord = resourceRepository.findResourceRecordByPathAndName(parentPath, name);
+
         return optionalResourceRecord.isPresent();
     }
 
     public List<ResourceDto> createDirectories(String filePath) {
         List<String> paths = new ArrayList<>();
+
+
         List<ResourceDto> directories = new ArrayList<>();
+
         String parentPath = PathResolver.getParentPath(filePath);
+
         int right = parentPath.indexOf('/') + 1;
+
         while (right < parentPath.length()) {
             if (parentPath.charAt(right) == '/') {
                 paths.add(parentPath.substring(0, right));
@@ -130,8 +153,11 @@ public class DirectoryService {
         for (String path : paths) {
             try {
                 addDirectory(path + "/");
+
                 String pathWithoutPrefix = PathResolver.getPathWithoutPrefix(path);
+
                 String fileDtoPath = PathResolver.getParentPath(pathWithoutPrefix);
+
                 String name = PathResolver.getFileName(pathWithoutPrefix);
 
                 if (fileDtoPath.equals(name)) {
@@ -145,7 +171,6 @@ public class DirectoryService {
                 );
 
                 directories.add(directoryDto);
-
             } catch (FolderIsAlreadyExistException ignored) {
             }
         }

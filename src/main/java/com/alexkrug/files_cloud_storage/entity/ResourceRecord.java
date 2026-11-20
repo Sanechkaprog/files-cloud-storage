@@ -10,16 +10,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
 import java.io.Serializable;
 import java.util.UUID;
 
 @Entity
-@Getter
-@Setter
 @Table(name = "resources")
-public class Resource implements Serializable {
+public class ResourceRecord implements Serializable {
     @Id
     @Column(name = "resource_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,15 +35,50 @@ public class Resource implements Serializable {
     @Enumerated(EnumType.STRING)
     private ResourceType type;
 
-    public Resource(){}
+    public ResourceRecord(){}
 
-    public Resource(String path, String name, Long size, ResourceType type) {
+    public ResourceRecord(String path, String name, Long size, ResourceType type) {
         this.path = path;
         this.name = name;
         this.size = size;
         this.type = type;
     }
 
+    public UUID getResourceId() {
+        return resourceId;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
+    public ResourceType getType() {
+        return type;
+    }
+
+    public void setType(ResourceType type) {
+        this.type = type;
+    }
 
     @Override
     public String toString() {
