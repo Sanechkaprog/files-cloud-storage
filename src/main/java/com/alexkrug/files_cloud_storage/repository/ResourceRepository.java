@@ -1,0 +1,26 @@
+package com.alexkrug.files_cloud_storage.repository;
+
+
+import com.alexkrug.files_cloud_storage.entity.ResourceRecord;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+public interface ResourceRepository extends JpaRepository<ResourceRecord, UUID> {
+
+    Optional<ResourceRecord> findResourceRecordByPathAndName(String path, String name);
+
+    List<ResourceRecord> findResourceRecordByPath(String path);
+
+    List<ResourceRecord> findResourceRecordByNameContainingAndPathStartingWith(String name, String prefix);
+
+    void deleteResourceRecordByPathAndName(String path, String name);
+
+    List<ResourceRecord> findResourceRecordByPathStartingWith(String path);
+
+
+}

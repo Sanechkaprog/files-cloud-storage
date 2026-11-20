@@ -1,6 +1,6 @@
 package com.alexkrug.files_cloud_storage.security;
 
-import com.alexkrug.files_cloud_storage.auth.domain.User;
+import com.alexkrug.files_cloud_storage.entity.User;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;

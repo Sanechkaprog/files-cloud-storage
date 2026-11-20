@@ -1,8 +1,8 @@
 package com.alexkrug.files_cloud_storage.security;
 
-import com.alexkrug.files_cloud_storage.auth.domain.User;
-import com.alexkrug.files_cloud_storage.auth.exceptions.AuthException;
-import com.alexkrug.files_cloud_storage.auth.infrastructure.UserRepository;
+import com.alexkrug.files_cloud_storage.entity.User;
+import com.alexkrug.files_cloud_storage.exceptions.AuthException;
+import com.alexkrug.files_cloud_storage.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
