@@ -16,7 +16,7 @@ public interface ResourceRepository extends JpaRepository<ResourceRecord, UUID> 
 
     List<ResourceRecord> findResourceRecordByPath(String path);
 
-    List<ResourceRecord> findResourceRecordByNameContaining(String name);
+    List<ResourceRecord> findResourceRecordByNameContainingAndPathStartingWith(String name, String prefix);
 
     void deleteResourceRecordByPathAndName(String path, String name);
 

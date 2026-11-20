@@ -28,7 +28,6 @@ import java.util.zip.ZipOutputStream;
 @Service
 @Transactional
 public class ResourceService {
-    private static final Logger log = LoggerFactory.getLogger(ResourceService.class);
     private final DirectoryService directoryService;
     private final ObjectStorageService objectStorageService;
     private final ResourceRepository resourceRepository;
@@ -87,10 +86,19 @@ public class ResourceService {
         return dtos;
     }
 
-    public List<ResourceDto> search(String query) {
+    public List<ResourceDto> search(String identWithQuery) {
         List<ResourceDto> dtos = new ArrayList<>();
 
-        List<ResourceRecord> resourceRecords = resourceRepository.findResourceRecordByNameContaining(query);
+        String[] parts = identWithQuery.split(":");
+
+        if (parts.length != 2) {
+            throw new IllegalStateException("Invalid path has got");
+        }
+
+        String ident = parts[0];
+        String query = parts[1];
+
+        List<ResourceRecord> resourceRecords = resourceRepository.findResourceRecordByNameContainingAndPathStartingWith(query, ident);
 
         for (ResourceRecord resourceRecord : resourceRecords) {
             String path = resourceRecord.getPath();

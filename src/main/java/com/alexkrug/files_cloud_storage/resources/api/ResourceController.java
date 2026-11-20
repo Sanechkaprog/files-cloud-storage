@@ -119,10 +119,14 @@ public class ResourceController {
     @GetMapping("/search")
     public ResponseEntity<List<ResourceDto>> searchResources(
             @RequestParam("query")
-            String query
+            String query,
+
+            HttpSession session
     ) {
+        String identWithQuery = session.getAttribute("userId") + ":" + query;
+
         return new ResponseEntity<>(
-                resourceService.search(query),
+                resourceService.search(identWithQuery),
                 HttpStatus.OK
         );
     }
