@@ -30,7 +30,6 @@ public class UserController implements UserApi {
         }
 
         UUID userId = (UUID) httpSession.getAttribute("userId");
-
         User user = userService.getUserById(userId);
 
         return new ResponseEntity<>(

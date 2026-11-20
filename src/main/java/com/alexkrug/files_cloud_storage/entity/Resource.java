@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "resources")
-public class ResourceRecord implements Serializable {
+public class Resource implements Serializable {
     @Id
     @Column(name = "resource_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,9 +35,9 @@ public class ResourceRecord implements Serializable {
     @Enumerated(EnumType.STRING)
     private ResourceType type;
 
-    public ResourceRecord(){}
+    public Resource() {}
 
-    public ResourceRecord(String path, String name, Long size, ResourceType type) {
+    public Resource(String path, String name, Long size, ResourceType type) {
         this.path = path;
         this.name = name;
         this.size = size;
