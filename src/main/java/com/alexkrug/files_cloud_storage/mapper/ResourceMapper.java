@@ -1,7 +1,7 @@
 package com.alexkrug.files_cloud_storage.mapper;
 import com.alexkrug.files_cloud_storage.dto.DirectoryDto;
 import com.alexkrug.files_cloud_storage.dto.FileDto;
-import com.alexkrug.files_cloud_storage.entity.ResourceRecord;
+import com.alexkrug.files_cloud_storage.entity.Resource;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -9,8 +9,8 @@ import org.mapstruct.Mapping;
 public interface ResourceMapper {
 
     @Mapping(source = "pathWithoutPrefix", target = "path")
-    DirectoryDto toDirectoryDto(ResourceRecord resourceRecord, String pathWithoutPrefix);
+    DirectoryDto toDirectoryDto(Resource resource, String pathWithoutPrefix);
 
     @Mapping(source = "pathWithoutPrefix", target = "path")
-    FileDto toFileDto(ResourceRecord resourceRecord, String pathWithoutPrefix);
+    FileDto toFileDto(Resource resource, String pathWithoutPrefix);
 }

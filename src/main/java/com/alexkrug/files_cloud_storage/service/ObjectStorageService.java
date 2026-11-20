@@ -17,8 +17,7 @@ import io.minio.StatObjectResponse;
 import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -26,10 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 public class ObjectStorageService implements ObjectStorage {
     private final String BUCKET_NAME = "cloud-storage";
     private final MinioClient minioClient;
-    private static final Logger log = LoggerFactory.getLogger(ObjectStorageService.class);
 
     public ObjectStorageService(MinioClient minioClient) {
         this.minioClient = minioClient;

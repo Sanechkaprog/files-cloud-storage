@@ -28,13 +28,9 @@ public class AuthController implements AuthApi {
     @PostMapping(value = "sign-up")
     public ResponseEntity<MainResponse> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         String username = signUpRequest.username();
-
         String password = signUpRequest.password();
-
         String usernameInDb = userService.signUp(username, password);
-
         MainResponse response = new MainResponse(usernameInDb);
-
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -42,22 +38,14 @@ public class AuthController implements AuthApi {
     @PostMapping("sign-in")
     public ResponseEntity<MainResponse> signIn(@Valid @RequestBody SignUpRequest signUpRequest, HttpSession session) {
         String username = signUpRequest.username();
-
         String password = signUpRequest.password();
-
         Authentication authentication = userService.signIn(username, password);
-
         String usernameAuth = authentication.getName();
-
         User user = userService.getUserByUsername(usernameAuth);
-
         session.setAttribute("userId", user.getUserId());
-
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                 SecurityContextHolder.getContext());
-
         MainResponse mainResponse = new MainResponse(authentication.getName());
-
         return new ResponseEntity<>(mainResponse, HttpStatus.OK);
     }
 
@@ -65,17 +53,11 @@ public class AuthController implements AuthApi {
     @PostMapping("sign-out")
     public ResponseEntity<HttpStatus> signOut(HttpSession session, HttpServletResponse httpServletResponse) {
         session.invalidate();
-
         Cookie cookie = new Cookie("JSESSIONID", null);
-
         cookie.setPath("/");
-
         cookie.setMaxAge(0);
-
         httpServletResponse.addCookie(cookie);
-
         SecurityContextHolder.clearContext();
-
         return ResponseEntity.ok().build();
 
     }

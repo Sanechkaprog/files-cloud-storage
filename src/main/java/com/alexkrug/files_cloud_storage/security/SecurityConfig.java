@@ -26,7 +26,7 @@ import org.springframework.web.servlet.HandlerExceptionResolver;
 @EnableWebSecurity
 public class SecurityConfig {
     private final UserRepository userRepository;
-    private final HandlerExceptionResolver resolver;
+    private final @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver;
     public SecurityConfig(UserRepository userRepository, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
         this.userRepository = userRepository;
         this.resolver = resolver;
